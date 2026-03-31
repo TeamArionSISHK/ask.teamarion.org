@@ -789,10 +789,17 @@ textarea,
 @media (max-width: 700px) {
   .app-header {
     position: sticky;
+    background: transparent;
   }
 
   .app-header::before {
-    height: 100%;
+    height: calc(var(--header-height) + 28px);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--bg) 96%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 68%, transparent) 48%,
+      color-mix(in srgb, var(--bg) 0%, transparent) 100%
+    );
   }
 
   .app-header__inner,
@@ -822,7 +829,7 @@ textarea,
   }
 
   .chat-shell__header {
-    padding-top: 20px;
+    padding-top: 16px;
   }
 
   .chat-shell__title {
