@@ -11,6 +11,7 @@ export const teamKnowledge: KnowledgeSection[] = [
       'The team represents Hong Kong and SISHK at STEM Racing World Finals 2026.',
       'Team Arion is based in the Hong Kong Special Administrative Region.',
       'Team Arion currently has 6 members.',
+      'Team Arion operates as a multidisciplinary organisation spanning engineering, operations, marketing, and finance.',
       'Official team members and roles: Mark Yu (YU YUEMING) — Team Leader, Lead Engineer & Systems; Nithit Chanpongsang — Sponsorship, Outreach & Project Planning; Daniel Lau — Engineering & Implementation Support; Jeff Zhang — Engineering Support; James Shi — Race Operations & Driver; Marc Lee — Sustainability & Finance.',
     ],
   },
@@ -29,16 +30,23 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'Team Arion aims to do more than compete. The team focuses on engineering excellence, innovation, sustainability, outreach, supporting younger teams, and expanding access to STEM education.',
       'The team has supported junior teams in school and contributed to wider STEM outreach in the community.',
+      'The team positions itself as high-performance, structured, and intentional rather than a casual hobby project.',
+      'The enterprise portfolio frames the project as Team Arion’s Hong Kong STEM Racing Professional Class campaign.',
+      'The stated ambition is to win Hong Kong STEM Racing Professional Class and qualify for the World Finals.',
+      'The project is also justified as a way to gain real engineering, project management, and teamwork experience while raising technical standards and representing Hong Kong with excellence.',
     ],
   },
   {
     title: 'Outreach impact',
     details: [
-      'Team Arion inspired 140 students through STEM outreach.',
-      'The team organised 7 STEM workshops for primary schools and community centres.',
+      'Team Arion reports reaching 140 students through 7 STEM workshops at schools and community centres.',
       'Their outreach focused on supporting underprivileged children and promoting equal access to STEM education.',
       'Hands-on activities were used to teach participants about the mechanics of Formula One and STEM Racing.',
       'Outreach beneficiaries include Chai Wan Kok Catholic Primary School, Salesian Yip Hon Millennium Primary School, and Caritas Community Development Service Center at Aster Court Shopping Arcade.',
+      'A school STEM Week booth reached more than 800 students from Grades 5 to 12 and showcased development and Professional Class cars, aerodynamics, and basic 3D modelling.',
+      'The STEM Week booth reused pit materials from Development Class to reduce waste.',
+      'Team Arion also collaborated with the school Green Club to present on sustainability in Formula 1 and how those principles influence the team’s engineering decisions.',
+      'The team also views outreach and school engagement as part of a longer-term recruitment pipeline and programme-building effort.',
     ],
   },
   {
@@ -47,6 +55,7 @@ export const teamKnowledge: KnowledgeSection[] = [
       'At the STEM Racing Hong Kong and Macau Finals, Team Arion won Champion, Best Engineered Car, the Fastest Car Award with a 1.131 second run, the Scrutineering Award, the Team Identity Award, and Best Pit Display.',
       'In Hong Kong Development Class in August 2025, the team won Champion and the Best Engineered Car Award.',
       'Confluence/25P best recorded time was 1.131 seconds.',
+      'The team can credibly describe itself as a multiple-award-winning programme with fastest-car and best-engineered-car recognition.',
     ],
   },
   {
@@ -54,6 +63,7 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'Before joining Team Arion, Team Bauhinia Shift achieved 3rd Place Overall in Development Class.',
       'After Development Class, Bauhinia Shift joined Team Arion and became a strong strategic addition because of their strengths in documentation and teamwork.',
+      'The Professional Class team was formed through a merger between Team Arion in Development Class and Bauhinia Shift, with the aim of representing Hong Kong on a global stage.',
       'Under Mark Yu’s leadership, workflows, visuals, and documentation standards were aligned with Team Arion’s engineering and enterprise philosophy, improving consistency and output quality across the team.',
     ],
   },
@@ -62,6 +72,8 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'The current car is Ultraviolet, which is being prepared for World Finals 2026.',
       'Previous cars include Confluence/25P in Professional Class and Fluence in Development Class.',
+      'Confluence/25P weighed 51 grams.',
+      'Fluence weighed 63.5 grams.',
     ],
   },
   {
@@ -146,6 +158,7 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'Team Arion stands out for strong technical innovation, exceptional design quality, highly refined execution, interactive and ambitious pit display design, high documentation and presentation standards, professional systems thinking, and strong emphasis on consistency across engineering, visuals, and delivery.',
       'The team combines engineering quality with enterprise-style branding, structure, and presentation.',
+      'Team Arion sees itself as setting the benchmark rather than following it.',
       'A polished why-Team-Arion summary is: Team Arion combines engineering excellence, innovation, and professional execution at a very high level. The team does not only build a fast car, but complete systems spanning structural optimisation, manufacturing decisions, interactive pit experiences, outreach impact, sponsor value, and long-term vision.',
     ],
   },
@@ -153,6 +166,7 @@ export const teamKnowledge: KnowledgeSection[] = [
     title: 'Why World Finals matters',
     details: [
       'World Finals matters because it allows Team Arion to represent SISHK and Hong Kong on a global stage.',
+      'World Finals includes competition from more than 30 countries, which strengthens the team’s global credibility.',
       'It creates opportunities to learn from teams around the world.',
       'It provides exposure and ROI for sponsors.',
       'It is a rare, high-level international STEM experience and is viewed by the team as a unique once-in-a-lifetime opportunity.',
@@ -165,6 +179,42 @@ export const teamKnowledge: KnowledgeSection[] = [
       'It represents the team’s commitment to engineering perfection, design excellence, professional discipline, innovation, quality, and integrity.',
       'Purple symbolizes prestige and creativity, unity and purpose, and the balance between artistic vision and engineering discipline.',
       'Core quote: “We are not just another STEM Racing team, we set the standard.”',
+      'The Purple Standard is the team’s internal benchmark for excellence, design quality, and professional discipline.',
+    ],
+  },
+  {
+    title: 'Sponsor value and ROI',
+    details: [
+      'From a sponsor or enterprise perspective, Team Arion delivers performance, visibility, and engagement.',
+      'The team frames funding as something that directly translates into visibility, outreach, and performance outcomes.',
+      'A strong sponsor-facing explanation is that Team Arion offers not just competition results, but also media presence, events, outreach, digital engagement, and long-term brand value.',
+      'Sponsor support can also be activated through branded content and campaign exposure, not only logos on materials.',
+    ],
+  },
+  {
+    title: 'Marketing and growth strategy',
+    details: [
+      'Team Arion uses a structured marketing approach built around the AIDA funnel: Attention, Interest, Desire, and Action.',
+      'The goals of this strategy include team exposure, sponsor ROI, STEM awareness, and sustainable marketing growth.',
+      'The team uses data-driven evaluation methods such as engagement heatmaps and weighted engagement metrics.',
+      'The four core marketing goals are to expose the team and its members, provide sponsor ROI, spread awareness of STEM Racing and STEM, and integrate sustainability into marketing.',
+    ],
+  },
+  {
+    title: 'Digital capability and Ask Arion',
+    details: [
+      'Team Arion uses a structured digital strategy that includes SEO, technical optimisation, and a deliberate online presence.',
+      'The team tracks digital performance and audience behaviour as part of a data-driven media approach.',
+      'Ask Arion can be described as part of Team Arion’s digital engagement and knowledge system.',
+      'The team has also turned sponsor support into branded digital content, such as the Shapr3D hoodie campaign tied to Enterprise Plan support and sustainability-aligned DHL GoGreen shipping.',
+    ],
+  },
+  {
+    title: 'Scale and ecosystem reach',
+    details: [
+      'Team Arion competes within a global STEM Racing ecosystem with large international reach.',
+      'The broader ecosystem figures available to the team include approximately 1.18 billion reach, 27.9 million video views, and 2.3 million impressions.',
+      'These figures are useful in sponsor-facing answers to describe ecosystem scale rather than claiming they are Team Arion-only audience numbers.',
     ],
   },
   {
@@ -177,6 +227,45 @@ export const teamKnowledge: KnowledgeSection[] = [
       'The Purple Unity covers collaboration, respect, teamwork, and determination.',
       'The Purple Vision covers brand identity, design language, and presentation style.',
       'The Purple Legacy covers education, mentorship, inspiration, and future impact.',
+    ],
+  },
+  {
+    title: 'Project management and scheduling',
+    details: [
+      'Team Arion used a detailed Gantt chart to map tasks, dependencies, and timelines across engineering, manufacturing, outreach, compliance, and management.',
+      'The Gantt system was used to identify the critical path, sequence work correctly, allocate resources precisely, spot overlaps and schedule risks, and maintain a season-wide planning view.',
+      'The team maintained a project baseline and updated actual start and finish dates so schedule variance became visible early.',
+      'Team Arion used TeamGantt features including automated reminders, dependency alerts, progress notifications, real-time dashboards, and baseline comparisons.',
+      'This planning system helped reduce idle time, improve accountability, and resolve bottlenecks early.',
+    ],
+  },
+  {
+    title: 'RACI and role governance',
+    details: [
+      'The enterprise portfolio describes a RACI matrix used to keep the project aligned and reduce role ambiguity.',
+      'In technical phases such as CAD, aero refinement, tolerance adjustment, and manufacturability review, the engineer is generally Responsible, the Team Leader is Accountable, compliance is Consulted, and finance is Informed.',
+      'In sponsorship proposals, branding, and visual media, the outreach lead becomes Responsible, the Team Leader remains Accountable, the engineer is Consulted, and compliance and finance are Informed.',
+      'When discussing RACI, the chatbot should present it as a structured governance method used in the portfolio-stage project organisation.',
+    ],
+  },
+  {
+    title: 'MARC goal framework',
+    details: [
+      'Team Arion uses the M.A.R.C. framework in its enterprise and marketing planning.',
+      'MARC stands for Measurable, Achievable, Reflective and Relevant, and Comprehensive.',
+      'The system was named after team member Marc as a meaningful twist on the framework.',
+      'MARC is used to ensure goals are realistic, trackable, improvement-oriented, and focused on meaningful impact.',
+      'The framework is used for marketing goals and also appears in sustainability planning.',
+    ],
+  },
+  {
+    title: 'Strategic assessment and SWOT',
+    details: [
+      'Team Arion uses SWOT analysis to keep project scoping realistic and strategically positioned.',
+      'Key strengths include skilled and motivated team members, manufacturing, enterprise and marketing capability, access to CAD and simulation tools, sponsor relationships, and comprehensive planning.',
+      'Key weaknesses and risks include limited budget, limited access to equipment and materials, time pressure from the school schedule, and possible role overload.',
+      'Key opportunities include sponsorships, competition exposure, community outreach, STEM branding and visibility, and world-stage representation.',
+      'Key threats include strong competitors, technical failures, sponsor withdrawal, regulation noncompliance, and manufacturing delay.',
     ],
   },
   {
@@ -203,6 +292,57 @@ export const teamKnowledge: KnowledgeSection[] = [
       'Team Arion is open to collaborating with organisations, sponsors, and partners who share its commitment to engineering excellence and innovation.',
       'The team welcomes conversations about sponsorship, partnerships, technical collaboration, knowledge-sharing, and STEM initiatives.',
       'Team Arion is also open to partnerships with other student teams for technical collaboration, knowledge-sharing, and joint STEM initiatives.',
+      'Team Arion presents itself not just as a team, but as a scalable programme and brand with long-term partnership value.',
+    ],
+  },
+  {
+    title: 'Finance and budgeting',
+    details: [
+      'Team Arion began with a defined budget combining team contributions and sponsorship funds.',
+      'Budget categories include car manufacturing, testing, transport, software, and packaging, administration, and other fixed costs.',
+      'The team uses a 10 percent contingency factor in financial planning.',
+      'The expenditure system tracks transactional and cost data, strategic and analytical data, and accountability and audit data such as supplier, paid-by, and proof-of-purchase references.',
+      'The team tracks total expenditure to date, remaining budget, and budget utilisation percentage, and uses Sankey diagrams, pie charts, and bi-weekly budget reports to guide optimisation.',
+      'The portfolio-level sponsorship summary states 10 sponsors and HKD 49,815 raised.',
+    ],
+  },
+  {
+    title: 'Risk management and FMEA',
+    details: [
+      'Team Arion uses Failure Mode and Effects Analysis, or FMEA, to evaluate risks across car components and project execution.',
+      'For each failure mode, the team scores Severity, Occurrence, and Detection, then calculates RPN as Severity multiplied by Occurrence multiplied by Detection.',
+      'The team aims to develop at least three mitigation strategies for each identified failure rather than relying on a single safeguard.',
+      'Example risk themes include front wing structural failure, rear wing detachment, chassis cracking or flex, axle misalignment, loose fasteners, manufacturing delays, and sponsor withdrawal.',
+      'One documented example is front wing damage during painting, scored at Severity 8, Occurrence 5, Detection 1, for an RPN of 40, treated as a meaningful schedule-delay risk.',
+    ],
+  },
+  {
+    title: 'Communications plan',
+    details: [
+      'Team Arion developed a communications plan to identify stakeholder needs and tailor information appropriately.',
+      'Stakeholder groups include team members, the teacher-in-charge, school administration, sponsors and potential sponsors, competition organisers and judges, and the public or community audience.',
+      'The team uses weekly internal status reporting for team members.',
+      'Sponsor and stakeholder status reporting is generally monthly, increasing in frequency closer to competitions.',
+      'Competition-related compliance reporting also increases as deadlines approach.',
+    ],
+  },
+  {
+    title: 'Marketing execution and channels',
+    details: [
+      'The portfolio identifies key audience groups including students, STEM competitors, the general public, and sponsors or stakeholders.',
+      'Messaging is adapted by audience: students get fun teamwork and creativity messaging, STEM competitors get deeper technical and results-focused content, the general public gets simple positive school-pride messaging, and sponsors get ROI, professionalism, impact, and visibility messaging.',
+      'At the Attention stage, channels include Instagram Reels, LinkedIn posts, school reposts, announcements, the website, and intro video content.',
+      'At the Interest stage, channels include the FAQ page, SEO, testimonials, member interviews, and achievement posts.',
+      'At the Desire stage, channels include the sponsorship prospectus, comparison visuals, ROI metrics visuals, LinkedIn content, and case studies.',
+      'At the Action stage, channels include website contact forms, email outreach, WhatsApp Business links, meeting scheduling, and clear calls to action.',
+      'Partnership retention includes newsletters, sponsor shout-outs, event invitations, and end-of-season impact reports.',
+    ],
+  },
+  {
+    title: 'Long-term vision',
+    details: [
+      'Team Arion aims to build a sustainable team pipeline, a stronger student ecosystem, and a long-term brand legacy.',
+      'The long-term vision goes beyond one competition cycle and focuses on continuity, recruitment, systems, and institutional growth.',
     ],
   },
   {
