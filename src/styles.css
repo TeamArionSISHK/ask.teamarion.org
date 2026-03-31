@@ -200,13 +200,28 @@ textarea,
 }
 
 .app-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 20;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface-solid) 74%, transparent);
-  backdrop-filter: blur(10px) saturate(1.08);
-  -webkit-backdrop-filter: blur(10px) saturate(1.08);
+  background: transparent;
+  isolation: isolate;
+}
+
+.app-header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(var(--header-height) + 36px);
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg) 100%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 82%, transparent) 52%,
+    color-mix(in srgb, var(--bg) 0%, transparent) 100%
+  );
 }
 
 .app-header__inner {
@@ -226,7 +241,7 @@ textarea,
 
 .chat-page {
   flex: 1 1 auto;
-  height: calc(100svh - var(--header-height));
+  height: 100svh;
   min-height: 0;
   padding: 0;
   display: flex;
@@ -250,7 +265,7 @@ textarea,
   align-items: flex-start;
   justify-content: flex-start;
   gap: 20px;
-  padding: 18px 16px 14px;
+  padding: calc(var(--header-height) + 18px) 16px 14px;
   background: transparent;
 }
 
