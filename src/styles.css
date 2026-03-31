@@ -531,7 +531,7 @@ textarea,
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
+  background: var(--surface-solid);
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -869,6 +869,11 @@ textarea,
   .composer__placeholder {
     right: 62px;
     font-size: 16px;
+  }
+
+  .composer__input::placeholder {
+    color: var(--subtle);
+    opacity: 1;
   }
 
   .prompt-grid {

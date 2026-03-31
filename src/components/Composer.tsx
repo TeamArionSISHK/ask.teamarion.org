@@ -7,6 +7,7 @@ const PLACEHOLDERS = [
   'Ask about our awards...',
   'Ask how we built our car...',
 ];
+const MOBILE_PLACEHOLDER = 'Ask about Team Arion...';
 
 interface ComposerProps {
   value: string;
@@ -17,14 +18,31 @@ interface ComposerProps {
 
 export function Composer({ value, loading, onChange, onSubmit }: ComposerProps) {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 700px)');
+    const syncMobileState = () => setIsMobile(mediaQuery.matches);
+
+    syncMobileState();
+    mediaQuery.addEventListener('change', syncMobileState);
+
+    return () => {
+      mediaQuery.removeEventListener('change', syncMobileState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      return undefined;
+    }
+
     const intervalId = window.setInterval(() => {
       setPlaceholderIndex((current) => (current + 1) % PLACEHOLDERS.length);
     }, 3000);
 
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [isMobile]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,10 +71,11 @@ export function Composer({ value, loading, onChange, onSubmit }: ComposerProps) 
         onKeyDown={handleKeyDown}
         rows={1}
         className="composer__input"
+        placeholder={isMobile ? MOBILE_PLACEHOLDER : undefined}
       />
 
       <AnimatePresence mode="wait" initial={false}>
-        {!value ? (
+        {!value && !isMobile ? (
           <motion.div
             key={PLACEHOLDERS[placeholderIndex]}
             initial={{ opacity: 0, y: 4 }}
