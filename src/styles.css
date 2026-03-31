@@ -787,6 +787,14 @@ textarea,
 }
 
 @media (max-width: 700px) {
+  .app-header {
+    position: sticky;
+  }
+
+  .app-header::before {
+    height: 100%;
+  }
+
   .app-header__inner,
   .chat-shell__header,
   .chat-thread,
@@ -807,6 +815,14 @@ textarea,
     height: 100%;
     min-height: 100%;
     max-height: 100%;
+  }
+
+  .chat-page {
+    height: calc(100svh - var(--header-height));
+  }
+
+  .chat-shell__header {
+    padding-top: 20px;
   }
 
   .chat-shell__title {
