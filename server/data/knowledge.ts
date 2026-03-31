@@ -1,0 +1,178 @@
+export interface KnowledgeSection {
+  title: string;
+  details: string[];
+}
+
+export const teamKnowledge: KnowledgeSection[] = [
+  {
+    title: 'Team identity',
+    details: [
+      'Team Arion is a team of students from Singapore International School (Hong Kong) competing in the global STEM Racing engineering and business challenge.',
+      'The team represents Hong Kong and SISHK at STEM Racing World Finals 2026.',
+      'Official team members and roles: Mark Yu (YU YUEMING) — Team Leader, Lead Engineer & Systems; Nithit Chanpongsang — Sponsorship, Outreach & Project Planning; Daniel Lau — Engineering & Implementation Support; Jeff Zhang — Engineering Support; James Shi — Race Operations & Driver; Marc Lee — Sustainability & Finance.',
+    ],
+  },
+  {
+    title: 'Team mission and purpose',
+    details: [
+      'Team Arion aims to do more than compete. The team focuses on engineering excellence, innovation, sustainability, outreach, supporting younger teams, and expanding access to STEM education.',
+      'The team has supported junior teams in school and contributed to wider STEM outreach in the community.',
+    ],
+  },
+  {
+    title: 'Outreach impact',
+    details: [
+      'Team Arion inspired more than 140 students through STEM outreach.',
+      'The team reached over 120 students in engineering and STEM engagement activities.',
+      'The team organised 7 STEM workshops for primary schools and community centres.',
+      'Their outreach focused on supporting underprivileged children and promoting equal access to STEM education.',
+      'Hands-on activities were used to teach participants about the mechanics of Formula One and STEM Racing.',
+      'Outreach beneficiaries include Chai Wan Kok Catholic Primary School, Salesian Yip Hon Millennium Primary School, and Caritas Community Development Service Center at Aster Court Shopping Arcade.',
+    ],
+  },
+  {
+    title: 'Competition achievements',
+    details: [
+      'At the STEM Racing Hong Kong and Macau Finals, Team Arion won Champion, Best Engineered Car, the Fastest Car Award with a 1.131 second run, the Scrutineering Award, the Team Identity Award, and Best Pit Display.',
+      'In Hong Kong Development Class in August 2025, the team won Champion and the Best Engineered Car Award.',
+    ],
+  },
+  {
+    title: 'Team expansion and Bauhinia Shift',
+    details: [
+      'Before joining Team Arion, Team Bauhinia Shift achieved 3rd Place Overall in Development Class.',
+      'After Development Class, Bauhinia Shift joined Team Arion and became a strong strategic addition because of their strengths in documentation and teamwork.',
+      'Under Mark Yu’s leadership, workflows, visuals, and documentation standards were aligned with Team Arion’s engineering and enterprise philosophy, improving consistency and output quality across the team.',
+    ],
+  },
+  {
+    title: 'Cars and competition progression',
+    details: [
+      'The current car is Ultraviolet, which is being prepared for World Finals 2026.',
+      'Previous cars include Confluence/25P in Professional Class and Fluence in Development Class.',
+    ],
+  },
+  {
+    title: 'Engineering philosophy',
+    details: [
+      'Team Arion is highly focused on innovation, engineering quality, and professional execution.',
+      'A major engineering principle of the team is that structural optimisation delivers a higher return on investment than aerodynamics alone.',
+      'Based on Mark Yu’s simulation work, the team places stronger emphasis on structural performance while still using both FEA and CFD in the design process.',
+      'Key engineering focuses include structural optimisation, precision alignment, DFMA-conscious design, rule-compliant engineering, stiffness and reliability under load, and balancing simulation with manufacturability.',
+      'Notable technical features include extensive use of FEA and CFD, strong focus on alignment quality, wheel design with ribs spanning the full wheel width for improved rigidity and reduced flex under load, and vapour smoothing on MJF PA12 parts.',
+      'Ultraviolet is still under development for World Finals 2026, so the chatbot should describe the team’s engineering philosophy, methods, and validated design principles carefully and avoid inventing final features that have not yet been confirmed.',
+      'Team Arion’s engineering philosophy is that precision, consistency, and structural reliability outperform unnecessary complexity.',
+      'The team does not chase aggressive aerodynamic shapes just because they look advanced; design decisions are justified through simulation, manufacturing research, and performance evidence.',
+      'Confluence/25P was described as a car built around the principle that precision and consistency outperform complexity, with a focus on mechanical efficiency, dimensional reliability, and manufacturing repeatability.',
+      'Team Arion places greater emphasis on structural optimisation because, at STEM Racing scale, small misalignments, flex, runout, friction, and manufacturing inconsistency can cost more performance than aggressive aerodynamic features can recover.',
+      'Early research prioritised wheel rotational consistency, structural stiffness, manufacturing repeatability, and alignment robustness, while also noting that complex aero shapes offer limited return at small Reynolds numbers.',
+      'A strong answer to why Team Arion prioritises structure over pure aerodynamics is: Team Arion prioritises structural optimisation because at this scale, reliability, alignment, stiffness, and low rolling resistance usually matter more than visually aggressive aero. The team uses data and simulation to justify decisions, and the findings consistently showed that a stable, repeatable, mechanically efficient car gives better real-world return than chasing risky aerodynamic complexity.',
+      'Team Arion follows a data-driven, CAD-first workflow supported by research, concept exploration, rapid CAD modelling, CFD, FEA, manufacturability checks, and regulation validation.',
+      'The portfolio describes a workflow of sketch to quick CAD to test to refine, with decisions evaluated against technical validity, manufacturability, and performance contribution.',
+      'Manufacturability and DfMA considerations were built into CAD early rather than left until production.',
+      'A strong answer about process rigor is: The engineering process is rigorous because the team does not rely on intuition alone. The team begins with research, translates ideas into CAD quickly, validates them with simulation and manufacturability checks, and refines them against regulations, tolerances, and assembly constraints. That makes decisions technically defensible, not just visually appealing.',
+      'The team’s manufacturing strategy strongly favours HP Multi Jet Fusion PA12 for structural and aerodynamic printed parts because of dimensional consistency, warp resistance, predictable shrinkage, and compatibility with vapor smoothing.',
+      'PEEK is used for high-precision wheels because it offers excellent rigidity, stability, and very low runout when machined.',
+      'UHMW-PE is used for tether line guide functions because of its low friction and tolerance to misalignment, while PLA was used in halo prototyping and compliance testing.',
+      'MJF PA12 is important to Team Arion because it gives dimensional repeatability, stiffness, and manufacturing reliability.',
+      'The portfolio notes typical tolerances around plus or minus 0.1 to 0.25 millimetres, strong mechanical properties, isotropic behaviour, and reliable vapor smoothing response.',
+      'This helps preserve wheel support alignment, aero surface quality, and assembly repeatability. Rejected alternatives included SLA, generic SLS, and hobby-grade FDM for critical structural parts.',
+      'A strong answer about MJF PA12 is: The team prefers HP MJF PA12 because it gives the dimensional consistency and stiffness needed for precision-critical parts. At STEM Racing scale, even small tolerance errors can affect wheel alignment, friction, and repeatability, so manufacturing stability is a major performance factor.',
+      'A standout subsystem is the wheel system and wheel-support module.',
+      'The portfolio describes the wheel-support module as the technical centrepiece of Confluence/25P and explains that the wheels went through multiple structural iterations to improve stiffness, runout, and dimensional stability.',
+      'The wheel-support crossbar design increased torsional stiffness, reduced leg splay, improved bending resistance, and stabilised wheel alignment.',
+      'A strong answer about what part the team is most proud of is: One subsystem the team is especially proud of is the wheel and wheel-support system. It is one of the most performance-critical areas of the car, and the team invested heavily in its structural design, manufacturability, and alignment stability because that directly affects rolling efficiency and consistency on track.',
+      'The wheels are treated as precision-critical rotating components.',
+      'The portfolio explains that PEEK wheels were selected for rigidity, dimensional stability, low runout, and CNC machinability, while geometry was refined to improve load paths, reduce deformation, and maintain concentricity.',
+      'Wall thickness, spoke-root fillets, and mass distribution were adjusted to improve stiffness without sacrificing too much inertia.',
+      'Team Arion uses FEA for structural validation of wheel supports, wheels, tether line guides, halo, and wing connections.',
+      'The team uses CFD for aero behaviour, wake control, drag trends, and flow stability, plus CAD-driven manufacturability checks, regulation compliance checks through section analysis and dimension control, and rolling and alignment tests to validate straight-line behaviour and assembly consistency.',
+      'FEA is used to verify that structural parts remain stiff, aligned, and safe under realistic loads.',
+      'The portfolio describes FEA being used to evaluate stress distribution, deformation, and safety margins in wheel supports, wheels, wings, tether line guides, and halo structures.',
+      'Structural integrity is framed not just as durability, but as something that directly affects assembly precision and repeatable race performance.',
+      'CFD is used to validate low-risk aerodynamic behaviour, not to chase overly aggressive shapes.',
+      'The team studies flow attachment, wake behaviour, drag trends, front wing performance, and flow stability.',
+      'The portfolio explicitly states that complex aero can produce marginal returns at this scale, so Team Arion uses CFD to ensure smooth, predictable behaviour and avoid unstable geometries.',
+      'Team Arion’s aero philosophy is mechanical-first and low-risk: smooth continuous curvature, no sharp transitions, no unnecessary pressure spikes, minimal curvature-induced separation, simple regulation-compliant geometry, and no aggressive multi-element concepts unless data justifies them.',
+      'The portfolio shows that more complex front-wing concepts performed worse, increasing drag by roughly 6 to 12 percent compared with the simpler baseline.',
+      'For Team Arion, good alignment means the car rolls straight, the wheels remain concentric and stable, and the assembly preserves low friction and repeatable behaviour under load.',
+      'Poor alignment increases rolling resistance, inconsistency, and wasted energy.',
+      'The portfolio repeatedly links performance to wheel rotational consistency, wheel support stiffness, tolerance control, and alignment robustness, and notes that straight-line rolling tests showed no directional drift and consistent wheel behaviour.',
+      'A strong answer about alignment is: Good alignment means the wheels track straight, rotate consistently, and maintain their intended geometry under load. At STEM Racing scale, tiny alignment errors can create more performance loss than many aero changes, so precision assembly and dimensional repeatability are major priorities.',
+      'Team Arion’s DfMA philosophy is that design for manufacturing begins in CAD, not after production starts.',
+      'The portfolio says manufacturability considerations such as minimum wall thickness, fillets, smoothing allowance, tolerances, orientation, and alignment features were built into the design model itself.',
+      'This is part of why the team describes Confluence/25P as technically defensible and repeatable rather than just visually refined.',
+      'The team uses a hybrid CAD workflow: Shapr3D for rapid ideation and early surface exploration, and Autodesk Fusion as the main engineering environment for parametric design, lofting, simulation preparation, DfMA, and compliance checking.',
+      'The portfolio notes a major model rebuild after timeline instability, which taught the team the importance of disciplined parametric structure and minimal inter-feature dependency in competition-ready CAD.',
+      'One of the hardest technical challenges was making the full system work correctly without the benefit of multiple physical prototypes.',
+      'Because much of the development had to be validated digitally, the team had to rely heavily on research, simulation, manufacturability logic, and careful engineering judgement to make confident decisions the first time.',
+      'The clearest engineering values are precision, technical defensibility, and practical performance.',
+      'Precision means tight tolerances, alignment quality, and repeatability matter more than unnecessary complexity.',
+      'Technical defensibility means decisions should be supported by research, testing, simulation, and manufacturability evidence.',
+      'Practical performance means the team chooses the highest-return engineering solution, even if it is less flashy, because real performance matters more than appearance.',
+      'A strong answer to what makes the car fast is: The car is fast because the team focuses on the engineering factors that actually matter most at this scale: alignment, rolling efficiency, stiffness, manufacturing repeatability, and low-risk aerodynamic behaviour. Rather than overcomplicating the design, the team uses simulation and research to build a car that is stable, precise, and repeatable under real race conditions.',
+    ],
+  },
+  {
+    title: 'What makes Team Arion different',
+    details: [
+      'Team Arion stands out for strong technical innovation, exceptional design quality, highly refined execution, interactive and ambitious pit display design, high documentation and presentation standards, professional systems thinking, and strong emphasis on consistency across engineering, visuals, and delivery.',
+      'The team combines engineering quality with enterprise-style branding, structure, and presentation.',
+      'A polished why-Team-Arion summary is: Team Arion combines engineering excellence, innovation, and professional execution at a very high level. The team does not only build a fast car, but complete systems spanning structural optimisation, manufacturing decisions, interactive pit experiences, outreach impact, sponsor value, and long-term vision.',
+    ],
+  },
+  {
+    title: 'Why World Finals matters',
+    details: [
+      'World Finals matters because it allows Team Arion to represent SISHK and Hong Kong on a global stage.',
+      'It creates opportunities to learn from teams around the world.',
+      'It provides exposure and ROI for sponsors.',
+      'It is a rare, high-level international STEM experience and is viewed by the team as a unique once-in-a-lifetime opportunity.',
+    ],
+  },
+  {
+    title: 'The Purple Standard',
+    details: [
+      'The Purple Standard is Team Arion’s core philosophy.',
+      'It represents the team’s commitment to engineering perfection, design excellence, professional discipline, innovation, quality, and integrity.',
+      'Purple symbolizes prestige and creativity, unity and purpose, and the balance between artistic vision and engineering discipline.',
+      'Core quote: “We are not just another STEM Racing team, we set the standard.”',
+    ],
+  },
+  {
+    title: 'The Purple campaign system',
+    details: [
+      'The team extends its identity through the “The Purple _____” campaign framework, where each phrase expresses one pillar of the team.',
+      'The Purple Precision covers engineering accuracy, tolerance control, and engineering excellence.',
+      'The Purple Frontier covers innovation, research and development, exploration, and experimentation.',
+      'The Purple Velocity covers performance, speed, control, and competitive excellence.',
+      'The Purple Unity covers collaboration, respect, teamwork, and determination.',
+      'The Purple Vision covers brand identity, design language, and presentation style.',
+      'The Purple Legacy covers education, mentorship, inspiration, and future impact.',
+    ],
+  },
+  {
+    title: 'Confidential systems',
+    details: [
+      'There is a confidential feature whose codename is internal only.',
+      'It is currently under development.',
+      'It will be showcased at the World Finals 2026 pit display.',
+      'Its details must not be disclosed publicly.',
+    ],
+  },
+];
+
+export const assistantRules = [
+  'You are Ask Arion, a Team Arion assistant.',
+  'Answer in 2 to 5 sentences unless the user clearly asks for more detail.',
+  'Be concise, calm, and helpful.',
+  'Keep sentences reasonably short and avoid long paragraphs.',
+  'You may use lightweight markdown for readability: **bold**, *italic*, short headings with ##, bullet points, and separator lines --- when genuinely helpful.',
+  'Use emphasis sparingly and bold only the most important phrases, not entire paragraphs.',
+  'Use only the supplied knowledge. Do not invent facts.',
+  'Do not reveal confidential or internal-only features, codenames, or undisclosed pit-display details.',
+  'If asked about confidential systems, say that some features are still under development for World Finals 2026 and cannot be shared publicly yet.',
+  'If the answer is not fully supported by the supplied knowledge, say that more team-specific detail is not currently loaded and then provide the safest high-level answer you can.',
+  'Do not mention images, image tags, or visual attachments.',
+  'Return JSON only when the caller expects JSON.',
+];
