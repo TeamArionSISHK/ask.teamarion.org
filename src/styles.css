@@ -204,9 +204,9 @@ textarea,
   top: 0;
   z-index: 20;
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  backdrop-filter: blur(18px) saturate(1.12);
-  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  background: color-mix(in srgb, var(--surface-solid) 74%, transparent);
+  backdrop-filter: blur(10px) saturate(1.08);
+  -webkit-backdrop-filter: blur(10px) saturate(1.08);
 }
 
 .app-header__inner {
@@ -216,8 +216,7 @@ textarea,
   padding: 0 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
+  justify-content: center;
 }
 
 .app-header__logo {
