@@ -353,7 +353,7 @@ export default function App() {
                 className="chat-shell__composer-note-button"
                 onClick={() => setPrivacyOpen(true)}
               >
-                Privacy Information
+                Important Information
               </button>
             </p>
             {error ? <div className="composer-error">{error}</div> : null}
@@ -384,7 +384,7 @@ export default function App() {
               <div className="privacy-modal__header">
                 <div>
                   <h2 id="privacy-modal-title" className="privacy-modal__title">
-                    Privacy Information
+                    Important Information
                   </h2>
                   <p className="privacy-modal__subtitle">
                     How Ask Arion handles conversation data, analytics, and AI responses.
@@ -402,6 +402,12 @@ export default function App() {
               </div>
 
               <div className="privacy-modal__body custom-scroll">
+                <section className="privacy-modal__section">
+                  <p className="privacy-modal__copy">
+                    Copyright © 2026 Team Arion. Created by Mark Yu.
+                  </p>
+                </section>
+
                 <section className="privacy-modal__section">
                   <h3 className="privacy-modal__section-title">Overview</h3>
                   <p className="privacy-modal__copy">
@@ -484,9 +490,16 @@ export default function App() {
                 <section className="privacy-modal__section">
                   <h3 className="privacy-modal__section-title">Contact</h3>
                   <p className="privacy-modal__copy">
-                    If you need more information about Ask Arion or data handling, please contact{' '}
+                    For privacy or data-handling questions, please contact{' '}
                     <a className="privacy-modal__link" href="mailto:privacy@teamarion.org">
                       privacy@teamarion.org
+                    </a>
+                    .
+                  </p>
+                  <p className="privacy-modal__copy">
+                    For general Team Arion enquiries, please contact{' '}
+                    <a className="privacy-modal__link" href="mailto:info@teamarion.org">
+                      info@teamarion.org
                     </a>
                     .
                   </p>

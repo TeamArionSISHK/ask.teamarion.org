@@ -282,9 +282,23 @@ textarea,
 .chat-thread {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0 16px;
+  padding: 0 16px 22px;
   overflow-y: auto;
   background: transparent;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 56px),
+    rgba(0, 0, 0, 0.88) calc(100% - 32px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 calc(100% - 56px),
+    rgba(0, 0, 0, 0.88) calc(100% - 32px),
+    transparent 100%
+  );
 }
 
 .chat-intro {
@@ -469,6 +483,7 @@ textarea,
 
 .chat-shell__composer {
   flex: none;
+  position: relative;
   padding: 10px 16px 6px;
   background: transparent;
   backdrop-filter: none;
