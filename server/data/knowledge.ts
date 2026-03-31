@@ -9,6 +9,8 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'Team Arion is a team of students from Singapore International School (Hong Kong) competing in the global STEM Racing engineering and business challenge.',
       'The team represents Hong Kong and SISHK at STEM Racing World Finals 2026.',
+      'STEM Racing World Finals 2026 takes place from October 3 to October 8, 2026.',
+      'The event venue is Resorts World Sentosa, Singapore.',
       'The original Team Arion was established in April 2025.',
       'The merger that formed the current Professional Class team happened in August 2025.',
       'Team Arion is based in the Hong Kong Special Administrative Region.',
@@ -87,6 +89,9 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'Major car components include the halo, helmet, car body, front wing, rear wing, front wheel support, rear wheel support, front wheels, rear wheels, and tether line guide bushing.',
       'The chatbot can describe these at a high level as key structural, aerodynamic, and race-critical systems of the car.',
+      'A STEM Racing car body is made from the STEM Racing Model Block, a proprietary Denford material.',
+      'The STEM Racing Model Block is a dense PU foam.',
+      'A STEM Racing car is typically powered by an 8 gram compressed CO2 cartridge inserted at the rear of the car.',
     ],
   },
   {

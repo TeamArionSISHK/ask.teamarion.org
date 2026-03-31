@@ -793,11 +793,11 @@ textarea,
   }
 
   .app-header::before {
-    height: calc(var(--header-height) + 28px);
+    height: calc(var(--header-height) + 36px);
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--bg) 96%, transparent) 0%,
-      color-mix(in srgb, var(--bg) 68%, transparent) 48%,
+      color-mix(in srgb, var(--bg) 100%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 82%, transparent) 52%,
       color-mix(in srgb, var(--bg) 0%, transparent) 100%
     );
   }
@@ -829,7 +829,7 @@ textarea,
   }
 
   .chat-shell__header {
-    padding-top: 16px;
+    padding-top: 18px;
   }
 
   .chat-shell__title {

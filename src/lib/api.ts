@@ -4,6 +4,84 @@ const CHAT_REQUEST_TIMEOUT_MS = 40_000;
 const NETWORK_ERROR_MESSAGE =
   'Ask Arion could not reach the server just now. Please try again in a moment.';
 
+function buildHttpErrorMessage(
+  status: number,
+  {
+    contentType,
+    server,
+    cfMitigated,
+    jsonError,
+    rawText,
+  }: {
+    contentType: string | null;
+    server: string | null;
+    cfMitigated: string | null;
+    jsonError?: string;
+    rawText?: string;
+  },
+) {
+  if (jsonError?.trim()) {
+    return jsonError.trim();
+  }
+
+  const normalizedContentType = contentType?.toLowerCase() ?? '';
+  const normalizedServer = server?.toLowerCase() ?? '';
+  const normalizedRawText = rawText?.toLowerCase() ?? '';
+  const cloudflareChallenge =
+    cfMitigated === 'challenge' ||
+    normalizedServer.includes('cloudflare') ||
+    normalizedRawText.includes('just a moment');
+
+  if (cloudflareChallenge && status === 403) {
+    return 'Ask Arion is currently behind a security check. Please refresh and try again.';
+  }
+
+  if (status === 429) {
+    return 'Ask Arion is busy right now. Please try again in a moment.';
+  }
+
+  if (status >= 520 && status <= 530) {
+    return 'Ask Arion hit an edge network error. Please try again in a moment.';
+  }
+
+  if (status === 502 || status === 503 || status === 504) {
+    return 'Ask Arion is temporarily unavailable right now. Please try again in a moment.';
+  }
+
+  if (!normalizedContentType.includes('application/json') && rawText) {
+    return `Ask Arion is unavailable right now (HTTP ${status}).`;
+  }
+
+  return `Ask Arion is unavailable right now (HTTP ${status}).`;
+}
+
+async function readErrorMessage(response: Response) {
+  const contentType = response.headers.get('content-type');
+  const server = response.headers.get('server');
+  const cfMitigated = response.headers.get('cf-mitigated');
+  const rawText = await response.text().catch(() => '');
+
+  let jsonError: string | undefined;
+  if (contentType?.toLowerCase().includes('application/json') && rawText) {
+    try {
+      const payload = JSON.parse(rawText) as { error?: string };
+      if (typeof payload.error === 'string') {
+        jsonError = payload.error;
+      }
+    } catch {
+      // Ignore parse failures and fall through to status-based messaging.
+    }
+  }
+
+  return buildHttpErrorMessage(response.status, {
+    contentType,
+    server,
+    cfMitigated,
+    jsonError,
+    rawText,
+  });
+}
+
 export async function sendChatMessage(input: ChatApiRequest): Promise<ChatApiResponse> {
   const controller = new AbortController();
   const timeoutId = globalThis.setTimeout(() => controller.abort(), CHAT_REQUEST_TIMEOUT_MS);
@@ -19,10 +97,7 @@ export async function sendChatMessage(input: ChatApiRequest): Promise<ChatApiRes
     });
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as
-        | { error?: string }
-        | null;
-      throw new Error(payload?.error ?? 'The assistant is unavailable right now.');
+      throw new Error(await readErrorMessage(response));
     }
 
     return (await response.json()) as ChatApiResponse;
@@ -66,19 +141,26 @@ interface StreamHandlers {
 }
 
 export async function streamChatMessage(input: ChatApiRequest, handlers: StreamHandlers) {
-  const response = await fetch('/api/chat/stream', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(input),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch('/api/chat/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(NETWORK_ERROR_MESSAGE);
+    }
+
+    throw error;
+  }
 
   if (!response.ok || !response.body) {
-    const payload = (await response.json().catch(() => null)) as
-      | { error?: string }
-      | null;
-    throw new Error(payload?.error ?? 'The assistant is unavailable right now.');
+    throw new Error(await readErrorMessage(response));
   }
 
   const reader = response.body.getReader();
