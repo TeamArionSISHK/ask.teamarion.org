@@ -1,10 +1,10 @@
-import { startTransition, useState } from 'react';
+import { startTransition, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Header } from './components/Header';
 import { SuggestedPrompts } from './components/SuggestedPrompts';
 import { ChatMessageCard } from './components/ChatMessageCard';
 import { Composer } from './components/Composer';
-import { sendChatMessage, streamChatMessage } from './lib/api';
+import { sendChatMessage } from './lib/api';
 import { suggestedPrompts } from './lib/suggestions';
 import type { ChatMessage } from './types/chat';
 
@@ -12,29 +12,194 @@ const initialAssistantMessage: ChatMessage = {
   id: 'welcome',
   role: 'assistant',
   text:
-    "Hi, I'm Ask Arion. I can answer short questions about Team Arion, the car, and the team's AI workflow using the information currently loaded into this app.",
+    'Hi, I’m Ask Arion. Ask me about our team, our car, or our engineering, and I’ll do my best to help.',
 };
 
-const MAX_CONTEXT_MESSAGES = 10;
+const CHAT_STORAGE_KEY = 'ask-arion-chat-session-v1';
+const CHAT_CONVERSATION_KEY = 'ask-arion-conversation-id-v1';
+const CHAT_ACTIVITY_KEY = 'ask-arion-chat-activity-v1';
+const CHAT_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.id === 'string' &&
+    (candidate.role === 'user' || candidate.role === 'assistant') &&
+    typeof candidate.text === 'string' &&
+    (candidate.status === undefined ||
+      candidate.status === 'idle' ||
+      candidate.status === 'error' ||
+      candidate.status === 'streaming')
+  );
+}
+
+function loadStoredMessages() {
+  if (typeof window === 'undefined') {
+    return [initialAssistantMessage];
+  }
+
+  try {
+    const lastActivity = Number.parseInt(window.sessionStorage.getItem(CHAT_ACTIVITY_KEY) ?? '', 10);
+    if (Number.isFinite(lastActivity) && Date.now() - lastActivity > CHAT_SESSION_TTL_MS) {
+      window.sessionStorage.removeItem(CHAT_STORAGE_KEY);
+      window.sessionStorage.removeItem(CHAT_CONVERSATION_KEY);
+      window.sessionStorage.removeItem(CHAT_ACTIVITY_KEY);
+      return [initialAssistantMessage];
+    }
+
+    const raw = window.sessionStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) {
+      return [initialAssistantMessage];
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [initialAssistantMessage];
+    }
+
+    const storedMessages = parsed
+      .filter(isChatMessage)
+      .map((message) => {
+        const normalizedMessage =
+          message.status === 'streaming'
+            ? {
+                ...message,
+                status: 'idle' as const,
+              }
+            : message;
+
+        if (normalizedMessage.id === 'welcome' && normalizedMessage.role === 'assistant') {
+          return initialAssistantMessage;
+        }
+
+        return normalizedMessage;
+      });
+    return storedMessages.length ? storedMessages : [initialAssistantMessage];
+  } catch {
+    return [initialAssistantMessage];
+  }
+}
+
+function loadStoredConversationId() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const lastActivity = Number.parseInt(window.sessionStorage.getItem(CHAT_ACTIVITY_KEY) ?? '', 10);
+    if (Number.isFinite(lastActivity) && Date.now() - lastActivity > CHAT_SESSION_TTL_MS) {
+      window.sessionStorage.removeItem(CHAT_CONVERSATION_KEY);
+      return null;
+    }
+
+    const conversationId = window.sessionStorage.getItem(CHAT_CONVERSATION_KEY);
+    return conversationId?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+function isStoredSessionExpired() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const lastActivity = Number.parseInt(window.sessionStorage.getItem(CHAT_ACTIVITY_KEY) ?? '', 10);
+  return Number.isFinite(lastActivity) && Date.now() - lastActivity > CHAT_SESSION_TTL_MS;
+}
+
+function clearStoredSession() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.removeItem(CHAT_STORAGE_KEY);
+  window.sessionStorage.removeItem(CHAT_CONVERSATION_KEY);
+  window.sessionStorage.removeItem(CHAT_ACTIVITY_KEY);
+}
+
+function markChatActivity() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(CHAT_ACTIVITY_KEY, String(Date.now()));
+}
 
 export default function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([initialAssistantMessage]);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadStoredMessages);
+  const [conversationId, setConversationId] = useState<string | null>(loadStoredConversationId);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const threadRef = useRef<HTMLDivElement | null>(null);
+  const isEmptyState = messages.length === 1;
+  const hasUserMessages = messages.some((message) => message.role === 'user');
 
-  function buildRequestPayload(message: string) {
-    const history = messages
-      .filter((entry) => entry.id !== 'welcome' && entry.status !== 'error' && entry.text.trim())
-      .slice(-MAX_CONTEXT_MESSAGES)
-      .map((entry) => ({
-        role: entry.role,
-        text: entry.text,
-      }));
+  useEffect(() => {
+    const thread = threadRef.current;
+    if (!thread) {
+      return;
+    }
 
+    thread.scrollTo({
+      top: thread.scrollHeight,
+      behavior: messages.length > 2 ? 'smooth' : 'auto',
+    });
+  }, [loading, messages]);
+
+  useEffect(() => {
+    if (!privacyOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setPrivacyOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [privacyOpen]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    } catch {
+      // Ignore storage failures and keep the chat usable.
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      if (conversationId) {
+        window.sessionStorage.setItem(CHAT_CONVERSATION_KEY, conversationId);
+      } else {
+        window.sessionStorage.removeItem(CHAT_CONVERSATION_KEY);
+      }
+    } catch {
+      // Ignore storage failures and keep the chat usable.
+    }
+  }, [conversationId]);
+
+  function buildRequestPayload(message: string, activeConversationId: string | null) {
     return {
       message,
-      history,
+      conversationId: activeConversationId ?? undefined,
     };
   }
 
@@ -44,6 +209,15 @@ export default function App() {
       return;
     }
 
+    const sessionExpired = isStoredSessionExpired();
+    const activeConversationId = sessionExpired ? null : conversationId;
+
+    if (sessionExpired) {
+      clearStoredSession();
+      setConversationId(null);
+      setMessages([initialAssistantMessage]);
+    }
+
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -51,197 +225,277 @@ export default function App() {
     };
 
     startTransition(() => {
-      setMessages((current) => [...current, userMessage]);
+      setMessages((current) =>
+        sessionExpired ? [initialAssistantMessage, userMessage] : [...current, userMessage],
+      );
       setDraft('');
       setError(null);
     });
+    markChatActivity();
     setLoading(true);
 
     const assistantMessageId = crypto.randomUUID();
-    let startedStreaming = false;
 
     try {
-      await streamChatMessage(
-        buildRequestPayload(message),
-        {
-          onStart: () => {
-            startedStreaming = true;
-            startTransition(() => {
-              setMessages((current) => [
-                ...current,
-                {
-                  id: assistantMessageId,
-                  role: 'assistant',
-                  text: '',
-                  status: 'streaming',
-                },
-              ]);
-            });
-          },
-          onDelta: (delta) => {
-            startTransition(() => {
-              setMessages((current) =>
-                current.map((entry) =>
-                  entry.id === assistantMessageId
-                    ? {
-                        ...entry,
-                        text: entry.text + delta,
-                        status: 'streaming',
-                      }
-                    : entry,
-                ),
-              );
-            });
-          },
-          onDone: (response) => {
-            startTransition(() => {
-              setMessages((current) =>
-                current.map((entry) =>
-                  entry.id === assistantMessageId
-                    ? {
-                        ...entry,
-                        text: response.text,
-                        status: 'idle',
-                      }
-                    : entry,
-                ),
-              );
-            });
-          },
-          onError: (messageText) => {
-            throw new Error(messageText);
-          },
-        },
-      );
-    } catch (caughtError) {
-      if (startedStreaming) {
-        const fallback =
-          caughtError instanceof Error
-            ? caughtError.message
-            : 'The assistant is unavailable right now.';
-        setError(fallback);
-        startTransition(() => {
-          setMessages((current) =>
-            current.map((entry) =>
-              entry.id === assistantMessageId
-                ? {
-                    ...entry,
-                    text: fallback,
-                    status: 'error',
-                  }
-                : entry,
-            ),
-          );
-        });
-      } else {
-        try {
-          const response = await sendChatMessage(buildRequestPayload(message));
-          startTransition(() => {
-            setMessages((current) => [
-              ...current,
-              {
-                id: assistantMessageId,
-                role: 'assistant',
-                text: response.text,
-                status: 'idle',
-              },
-            ]);
-          });
-        } catch (fallbackError) {
-          const fallback =
-            fallbackError instanceof Error
-              ? fallbackError.message
-              : 'The assistant is unavailable right now.';
-          setError(fallback);
-          startTransition(() => {
-            setMessages((current) => [
-              ...current,
-              {
-                id: assistantMessageId,
-                role: 'assistant',
-                text: fallback,
-                status: 'error',
-              },
-            ]);
-          });
+      const response = await sendChatMessage(buildRequestPayload(message, activeConversationId));
+      setConversationId(response.conversationId);
+      markChatActivity();
+      startTransition(() => {
+        const nextAssistantMessage: ChatMessage = {
+          id: assistantMessageId,
+          role: 'assistant',
+          text: response.text,
+          status: 'idle',
+        };
+
+        if (response.conversationReset && !sessionExpired) {
+          setMessages([initialAssistantMessage, userMessage, nextAssistantMessage]);
+          return;
         }
-      }
+
+        setMessages((current) => [...current, nextAssistantMessage]);
+      });
+    } catch (caughtError) {
+      const fallback =
+        caughtError instanceof Error
+          ? caughtError.message
+          : 'The assistant is unavailable right now.';
+      setError(fallback);
+      startTransition(() => {
+        setMessages((current) => [
+          ...current,
+          {
+            id: assistantMessageId,
+            role: 'assistant',
+            text: fallback,
+            status: 'error',
+          },
+        ]);
+      });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg)] text-slate-50">
+    <div className="app-shell">
       <div className="page-glow" aria-hidden="true" />
       <Header />
-      <main className="mx-auto flex min-h-[calc(100vh-73px)] max-w-5xl flex-col px-6 pb-8 pt-8">
+
+      <main className="chat-page">
         <motion.section
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.18 }}
-          className="mb-6"
+          transition={{ duration: 0.2 }}
+          className="chat-shell"
         >
-          <div>
-            <h1 className="max-w-3xl text-[1.95rem] font-semibold tracking-[-0.02em] text-slate-50">
-              Ask Team Arion a quick question.
-            </h1>
-            <p className="mt-3 max-w-2xl text-[1rem] leading-[1.68] text-slate-300">
-              Short answers, grounded in the current Team Arion knowledge pack and focused on the team, the cars, and the wider mission behind the project.
-            </p>
-          </div>
-        </motion.section>
+          <div ref={threadRef} className="chat-thread custom-scroll">
+            <div className="chat-shell__header">
+              <div>
+                <h1 className="chat-shell__title">Ask Arion</h1>
+                <p className="chat-shell__subtitle">
+                  Explore our engineering, our car, and what makes Team Arion unique.
+                </p>
+              </div>
+            </div>
 
-        <section className="mb-6">
-          <SuggestedPrompts
-            prompts={suggestedPrompts}
-            disabled={loading}
-            onSelect={(prompt) => void submitMessage(prompt)}
-          />
-        </section>
+            {isEmptyState ? (
+              <section className="chat-intro">
+                <div className="chat-intro__message">
+                  <ChatMessageCard message={messages[0]} />
+                </div>
+              </section>
+            ) : (
+              <AnimatePresence initial={false}>
+                {messages.map((message) => (
+                  <ChatMessageCard key={message.id} message={message} />
+                ))}
+              </AnimatePresence>
+            )}
 
-        <section className="flex-1 rounded-[1.75rem] border border-white/10 bg-[rgba(10,14,30,0.78)] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.22)] backdrop-blur-sm">
-          <div className="custom-scroll flex h-full min-h-[26rem] flex-col gap-4 overflow-y-auto pr-2">
-            <AnimatePresence initial={false}>
-              {messages.map((message) => (
-                <ChatMessageCard key={message.id} message={message} />
-              ))}
-            </AnimatePresence>
-            {loading && !messages.some((message) => message.status === 'streaming' && message.text) ? (
+            {loading ? (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mr-auto max-w-md rounded-2xl border border-white/10 bg-[color:var(--surface)] px-5 py-4"
+                className="message-row"
                 aria-live="polite"
               >
-                <div className="mb-2 text-[0.72rem] uppercase tracking-[0.14em] text-slate-400">
-                  Ask Arion
-                </div>
-                <div className="flex items-center gap-2 text-[0.98rem] text-slate-300">
-                  <span className="typing-dot" />
-                  <span className="typing-dot [animation-delay:120ms]" />
-                  <span className="typing-dot [animation-delay:240ms]" />
-                  Thinking through that...
-                </div>
+                <article className="message-card message-card--assistant message-card--typing">
+                  <div className="typing-indicator">
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                    <span className="typing-dot" />
+                    <span className="typing-indicator__text">Thinking through that…</span>
+                  </div>
+                </article>
               </motion.div>
             ) : null}
           </div>
-        </section>
 
-        <div className="mt-5">
-          <Composer
-            value={draft}
-            loading={loading}
-            onChange={setDraft}
-            onSubmit={() => void submitMessage()}
-          />
-          {error ? (
-            <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-[0.92rem] text-red-100">
-              {error}
-            </div>
-          ) : null}
-        </div>
+          <div className="chat-shell__composer">
+            {!hasUserMessages ? (
+              <SuggestedPrompts
+                prompts={suggestedPrompts}
+                disabled={loading}
+                onSelect={(prompt) => void submitMessage(prompt)}
+              />
+            ) : null}
+            <Composer
+              value={draft}
+              loading={loading}
+              onChange={setDraft}
+              onSubmit={() => void submitMessage()}
+            />
+            <p className="chat-shell__composer-note">
+              Ask Arion is AI-powered.{' '}
+              <button
+                type="button"
+                className="chat-shell__composer-note-button"
+                onClick={() => setPrivacyOpen(true)}
+              >
+                Privacy Information
+              </button>
+            </p>
+            {error ? <div className="composer-error">{error}</div> : null}
+          </div>
+        </motion.section>
       </main>
+
+      <AnimatePresence>
+        {privacyOpen ? (
+          <motion.div
+            className="privacy-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setPrivacyOpen(false)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="privacy-modal-title"
+              className="privacy-modal"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.18 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="privacy-modal__header">
+                <div>
+                  <h2 id="privacy-modal-title" className="privacy-modal__title">
+                    Privacy Information
+                  </h2>
+                  <p className="privacy-modal__subtitle">
+                    How Ask Arion handles conversation data, analytics, and AI responses.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="privacy-modal__close"
+                  aria-label="Close privacy information"
+                  onClick={() => setPrivacyOpen(false)}
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="privacy-modal__body custom-scroll">
+                <section className="privacy-modal__section">
+                  <h3 className="privacy-modal__section-title">Overview</h3>
+                  <p className="privacy-modal__copy">
+                    Ask Arion is an AI-powered assistant for Team Arion. This service is designed to
+                    answer questions about the team, the car, and the engineering behind the
+                    project. We aim to minimise data retention and keep conversations scoped only to
+                    the current chat session.
+                  </p>
+                </section>
+
+                <section className="privacy-modal__section">
+                  <h3 className="privacy-modal__section-title">Conversation Storage</h3>
+                  <p className="privacy-modal__copy">
+                    Conversations are stored temporarily on the server to preserve context across
+                    follow-up questions. Each conversation is isolated from other conversations and
+                    is not cross-referenced with any other chat.
+                  </p>
+                  <p className="privacy-modal__copy">
+                    Conversation context is retained for up to 12 hours after the user&apos;s last
+                    activity. After that period, it expires automatically.
+                  </p>
+                </section>
+
+                <section className="privacy-modal__section">
+                  <h3 className="privacy-modal__section-title">Knowledge Base Use</h3>
+                  <p className="privacy-modal__copy">
+                    Ask Arion always uses the Team Arion knowledge base as the core source of truth
+                    for responses. Earlier parts of the same conversation may be summarised to keep
+                    context coherent, but conversations are not merged together and the knowledge
+                    base remains available throughout.
+                  </p>
+                </section>
+
+                <section className="privacy-modal__section">
+                  <h3 className="privacy-modal__section-title">Data We Use</h3>
+                  <p className="privacy-modal__copy">
+                    We collect anonymized usage data, such as the number of queries and performance
+                    metrics, to improve the system. We use Cloudflare Web Analytics and Microsoft
+                    Clarity for analytics and product understanding.
+                  </p>
+                  <p className="privacy-modal__copy">
+                    We do not intentionally store personal data. However, logs may be temporarily
+                    retained for debugging, monitoring, or security purposes.
+                  </p>
+                </section>
+
+                <section className="privacy-modal__section">
+                  <h3 className="privacy-modal__section-title">Data Subprocessors</h3>
+                  <p className="privacy-modal__copy">
+                    Ask Arion currently relies on the following subprocessors for core service
+                    operation:
+                  </p>
+                  <ul className="privacy-modal__list">
+                    <li>OpenRouter, Inc.</li>
+                    <li>Alibaba Cloud International</li>
+                    <li>DigitalOcean</li>
+                    <li>Cloudflare, Inc.</li>
+                    <li>Microsoft Clarity</li>
+                  </ul>
+                </section>
+
+                <section className="privacy-modal__section">
+                  <h3 className="privacy-modal__section-title">User Responsibility</h3>
+                  <p className="privacy-modal__copy">
+                    Users should not submit sensitive or personal information, including passwords,
+                    personal identifiers, or any confidential material that should not be processed
+                    by an AI system.
+                  </p>
+                </section>
+
+                <section className="privacy-modal__section">
+                  <h3 className="privacy-modal__section-title">AI Disclaimer</h3>
+                  <p className="privacy-modal__copy">
+                    Responses are generated by AI and may be inaccurate, incomplete, or outdated.
+                    Ask Arion should be treated as an informational assistant rather than a
+                    substitute for official confirmation or professional judgement.
+                  </p>
+                </section>
+
+                <section className="privacy-modal__section">
+                  <h3 className="privacy-modal__section-title">Contact</h3>
+                  <p className="privacy-modal__copy">
+                    If you need more information about Ask Arion or data handling, please contact{' '}
+                    <a className="privacy-modal__link" href="mailto:privacy@teamarion.org">
+                      privacy@teamarion.org
+                    </a>
+                    .
+                  </p>
+                </section>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,22 +1,44 @@
 import type { ChatApiRequest, ChatApiResponse, RecentLogEntry } from '../types/chat';
 
+const CHAT_REQUEST_TIMEOUT_MS = 40_000;
+const NETWORK_ERROR_MESSAGE =
+  'Ask Arion could not reach the server just now. Please try again in a moment.';
+
 export async function sendChatMessage(input: ChatApiRequest): Promise<ChatApiResponse> {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(input),
-  });
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), CHAT_REQUEST_TIMEOUT_MS);
 
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as
-      | { error?: string }
-      | null;
-    throw new Error(payload?.error ?? 'The assistant is unavailable right now.');
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+      throw new Error(payload?.error ?? 'The assistant is unavailable right now.');
+    }
+
+    return (await response.json()) as ChatApiResponse;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('Ask Arion timed out after 40 seconds. Please try again.');
+    }
+
+    if (error instanceof TypeError) {
+      throw new Error(NETWORK_ERROR_MESSAGE);
+    }
+
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
   }
-
-  return (await response.json()) as ChatApiResponse;
 }
 
 interface StreamEventDelta {

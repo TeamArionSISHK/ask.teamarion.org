@@ -9,7 +9,19 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'Team Arion is a team of students from Singapore International School (Hong Kong) competing in the global STEM Racing engineering and business challenge.',
       'The team represents Hong Kong and SISHK at STEM Racing World Finals 2026.',
+      'Team Arion is based in the Hong Kong Special Administrative Region.',
+      'Team Arion currently has 6 members.',
       'Official team members and roles: Mark Yu (YU YUEMING) — Team Leader, Lead Engineer & Systems; Nithit Chanpongsang — Sponsorship, Outreach & Project Planning; Daniel Lau — Engineering & Implementation Support; Jeff Zhang — Engineering Support; James Shi — Race Operations & Driver; Marc Lee — Sustainability & Finance.',
+    ],
+  },
+  {
+    title: 'Team effort and project scale',
+    details: [
+      'Mark Yu has spent more than 530 hours on the project.',
+      'The whole team has spent roughly 700 to 800 hours in total.',
+      'For Confluence/25P, the team completed more than 140 CAD iterations across 4 major design versions.',
+      'Approximately 160 simulations were conducted to support design decisions.',
+      'These simulations included both FEA and CFD workflows.',
     ],
   },
   {
@@ -22,8 +34,7 @@ export const teamKnowledge: KnowledgeSection[] = [
   {
     title: 'Outreach impact',
     details: [
-      'Team Arion inspired more than 140 students through STEM outreach.',
-      'The team reached over 120 students in engineering and STEM engagement activities.',
+      'Team Arion inspired 140 students through STEM outreach.',
       'The team organised 7 STEM workshops for primary schools and community centres.',
       'Their outreach focused on supporting underprivileged children and promoting equal access to STEM education.',
       'Hands-on activities were used to teach participants about the mechanics of Formula One and STEM Racing.',
@@ -35,6 +46,7 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'At the STEM Racing Hong Kong and Macau Finals, Team Arion won Champion, Best Engineered Car, the Fastest Car Award with a 1.131 second run, the Scrutineering Award, the Team Identity Award, and Best Pit Display.',
       'In Hong Kong Development Class in August 2025, the team won Champion and the Best Engineered Car Award.',
+      'Confluence/25P best recorded time was 1.131 seconds.',
     ],
   },
   {
@@ -50,6 +62,22 @@ export const teamKnowledge: KnowledgeSection[] = [
     details: [
       'The current car is Ultraviolet, which is being prepared for World Finals 2026.',
       'Previous cars include Confluence/25P in Professional Class and Fluence in Development Class.',
+    ],
+  },
+  {
+    title: 'Main car components',
+    details: [
+      'Major car components include the halo, helmet, car body, front wing, rear wing, front wheel support, rear wheel support, front wheels, rear wheels, and tether line guide bushing.',
+      'The chatbot can describe these at a high level as key structural, aerodynamic, and race-critical systems of the car.',
+    ],
+  },
+  {
+    title: 'Manufacturing split and materials',
+    details: [
+      'Machined components include the wheels, car body, and tether line guide bushings.',
+      'Most other structural and aerodynamic parts were additively manufactured.',
+      'Different additive manufacturing methods were used depending on function and manufacturing requirements.',
+      'Materials used across the project include PEEK, PA12, ABS, PU foam, and UHMWPE.',
     ],
   },
   {
@@ -160,6 +188,47 @@ export const teamKnowledge: KnowledgeSection[] = [
       'Its details must not be disclosed publicly.',
     ],
   },
+  {
+    title: 'Pit display guidance',
+    details: [
+      'Some final pit display details are still in progress, so the chatbot should stay high-level.',
+      'The pit display includes multiple interactive elements.',
+      'The booth will use multiple screens or devices.',
+      'Final details are still being prepared for World Finals 2026.',
+    ],
+  },
+  {
+    title: 'Collaboration and partnership stance',
+    details: [
+      'Team Arion is open to collaborating with organisations, sponsors, and partners who share its commitment to engineering excellence and innovation.',
+      'The team welcomes conversations about sponsorship, partnerships, technical collaboration, knowledge-sharing, and STEM initiatives.',
+      'Team Arion is also open to partnerships with other student teams for technical collaboration, knowledge-sharing, and joint STEM initiatives.',
+    ],
+  },
+  {
+    title: 'Contact channels',
+    details: [
+      'For general questions or non-sponsorship matters, use teamarion@apps.singapore.edu.hk.',
+      'For urgent matters or faster responses, the direct contact is Mark Yu — Team Leader — mark@teamarion.org.',
+      'For partnership and sponsorship enquiries, the primary contact is Nithit Chanpongsang — Sponsorships Manager — chanpongsangnithit@apps.singapore.edu.hk.',
+      'Partnership and sponsorship enquiries should include the organisation name, the nature of the proposal, and any relevant supporting materials.',
+    ],
+  },
+  {
+    title: 'Social media and public presence',
+    details: [
+      'Instagram: teamarionhk.',
+      'LinkedIn: Team Arion.',
+    ],
+  },
+  {
+    title: 'Communications and confidentiality',
+    details: [
+      'Communications are treated as confidential.',
+      'They are accessible only to the sender, Team Arion members, and Singapore International School (Hong Kong) staff.',
+      'Communications may not be disclosed, reproduced, or distributed without prior authorisation.',
+    ],
+  },
 ];
 
 export const assistantRules = [
@@ -167,6 +236,9 @@ export const assistantRules = [
   'Answer in 2 to 5 sentences unless the user clearly asks for more detail.',
   'Be concise, calm, and helpful.',
   'Keep sentences reasonably short and avoid long paragraphs.',
+  'Format answers for readability: use short paragraphs, usually 1 to 2 sentences each.',
+  'When shifting to a new idea, insert a blank line rather than continuing a dense block of text.',
+  'If the answer naturally has several distinct points, prefer a short bullet list over a long wall of prose.',
   'You may use lightweight markdown for readability: **bold**, *italic*, short headings with ##, bullet points, and separator lines --- when genuinely helpful.',
   'Use emphasis sparingly and bold only the most important phrases, not entire paragraphs.',
   'Use only the supplied knowledge. Do not invent facts.',

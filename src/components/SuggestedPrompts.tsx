@@ -8,7 +8,7 @@ interface SuggestedPromptsProps {
 
 export function SuggestedPrompts({ prompts, disabled, onSelect }: SuggestedPromptsProps) {
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="prompt-grid">
       {prompts.map((prompt, index) => (
         <motion.button
           key={prompt}
@@ -18,9 +18,9 @@ export function SuggestedPrompts({ prompts, disabled, onSelect }: SuggestedPromp
           transition={{ duration: 0.18, delay: index * 0.04 }}
           onClick={() => onSelect(prompt)}
           disabled={disabled}
-          className="rounded-xl border border-[color:var(--border-strong)] bg-[color:var(--surface-soft)] px-4 py-3 text-left text-[0.95rem] font-medium text-slate-100 transition hover:border-[color:var(--accent-soft)] hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
+          className="prompt-card"
         >
-          {prompt}
+          <span className="prompt-card__text">{prompt}</span>
         </motion.button>
       ))}
     </div>

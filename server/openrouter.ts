@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { allowedImageTags } from './data/imageMap.js';
 import { assistantRules, teamKnowledge, type KnowledgeSection } from './data/knowledge.js';
 
 interface ConversationHistoryMessage {
@@ -7,17 +6,30 @@ interface ConversationHistoryMessage {
   text: string;
 }
 
-const responseSchema = z.object({
-  text: z.string().min(1).max(900),
-  image_tags: z.array(z.string()).max(2),
-});
+interface AskOpenRouterOptions {
+  conversationSummary?: string;
+  history?: ConversationHistoryMessage[];
+}
+
+const OPENROUTER_TIMEOUT_MS = 40_000;
 
 const openRouterResponseSchema = z.object({
   choices: z
     .array(
       z.object({
+        finish_reason: z.union([z.string(), z.null()]).optional(),
         message: z.object({
-          content: z.union([z.string(), z.null()]),
+          content: z.union([
+            z.string(),
+            z.null(),
+            z.array(
+              z.object({
+                type: z.string().optional(),
+                text: z.string().optional(),
+              }),
+            ),
+          ]),
+          reasoning: z.union([z.string(), z.null()]).optional(),
         }),
       }),
     )
@@ -52,21 +64,27 @@ function buildSystemPrompt() {
   return `${assistantRules.join('\n')}
 
 Knowledge:
-${knowledge}
+${knowledge}`;
+}
 
-Output schema:
-{
-  "text": "short answer",
-  "image_tags": []
-}`;
+function buildConversationSummaryPrompt(summary: string) {
+  return [
+    'Conversation summary so far:',
+    summary,
+    '',
+    'Use this summary only as continuity for the current conversation.',
+    'Do not mix it with any other conversation.',
+  ].join('\n');
 }
 
 function buildStreamingPrompt() {
   return [
     'You are Ask Arion, a Team Arion assistant.',
-    'Answer in plain text only, with no JSON, markdown, bullets, or code fences.',
+    'Answer in plain text only, with no JSON or code fences.',
     'Answer in 2 to 5 sentences.',
     'Be concise, calm, and helpful.',
+    'Use short paragraphs with blank lines between distinct ideas.',
+    'Avoid dense walls of text.',
     'Use only the supplied knowledge. Do not invent facts.',
     'If the answer is not fully supported by the supplied knowledge, say that more team-specific detail is not currently loaded and then provide the safest high-level answer you can.',
     '',
@@ -138,12 +156,53 @@ function extractPartialTextFromJsonPrefix(raw: string) {
   return output.trim();
 }
 
-function normalizeStructuredResponse(raw: string) {
-  const parsedResponse = responseSchema.parse(JSON.parse(extractJsonObject(raw)));
-  return {
-    text: parsedResponse.text.trim(),
-    image_tags: parsedResponse.image_tags.filter((tag) => allowedImageTags.includes(tag) && false),
+function normalizeAssistantResponse(raw: string) {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    throw new Error('Model returned an empty response.');
+  }
+
+  if (!trimmed.startsWith('{')) {
+    return {
+      text: trimmed,
+      image_tags: [],
+    };
+  }
+
+  const parsedResponse = JSON.parse(extractJsonObject(trimmed)) as {
+    text?: unknown;
   };
+  const text =
+    typeof parsedResponse.text === 'string'
+      ? parsedResponse.text.trim()
+      : extractPartialTextFromJsonPrefix(trimmed);
+
+  if (!text) {
+    throw new Error('Model returned an empty response.');
+  }
+
+  return {
+    text,
+    image_tags: [],
+  };
+}
+
+function extractMessageText(
+  content: string | null | Array<{ type?: string; text?: string }>,
+) {
+  if (typeof content === 'string') {
+    return content.trim();
+  }
+
+  if (!Array.isArray(content)) {
+    return '';
+  }
+
+  return content
+    .map((part) => part.text?.trim() ?? '')
+    .filter(Boolean)
+    .join('\n\n')
+    .trim();
 }
 
 function normalizeHistory(history: ConversationHistoryMessage[]) {
@@ -158,7 +217,7 @@ function normalizeHistory(history: ConversationHistoryMessage[]) {
 
 async function requestOpenRouter(
   message: string,
-  history: ConversationHistoryMessage[] = [],
+  { history = [], conversationSummary = '' }: AskOpenRouterOptions = {},
   stream = false,
 ) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -166,47 +225,72 @@ async function requestOpenRouter(
     throw new Error('OPENROUTER_API_KEY is not configured.');
   }
 
-  const model = process.env.OPENROUTER_MODEL || 'qwen/qwen3.5-27b';
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      ...(process.env.OPENROUTER_SITE_URL
-        ? { 'HTTP-Referer': process.env.OPENROUTER_SITE_URL }
-        : {}),
-      ...(process.env.OPENROUTER_APP_NAME
-        ? { 'X-Title': process.env.OPENROUTER_APP_NAME }
-        : {}),
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      max_tokens: 220,
-      stream,
-      messages: [
-        {
-          role: 'system',
-          content: stream ? buildStreamingPrompt() : buildSystemPrompt(),
-        },
-        ...normalizeHistory(history),
-        {
-          role: 'user',
-          content: message,
-        },
-      ],
-      ...(stream ? {} : { response_format: { type: 'json_object' } }),
-    }),
-  });
+  const model = process.env.OPENROUTER_MODEL || 'qwen/qwen3.5-flash-02-23';
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
 
-  return response;
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        ...(process.env.OPENROUTER_SITE_URL
+          ? { 'HTTP-Referer': process.env.OPENROUTER_SITE_URL }
+          : {}),
+        ...(process.env.OPENROUTER_APP_NAME
+          ? { 'X-Title': process.env.OPENROUTER_APP_NAME }
+          : {}),
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        max_tokens: 320,
+        reasoning: {
+          effort: 'none',
+          exclude: true,
+        },
+        stream,
+        messages: [
+          {
+            role: 'system',
+            content: stream ? buildStreamingPrompt() : buildSystemPrompt(),
+          },
+          ...(conversationSummary.trim()
+            ? [
+                {
+                  role: 'system' as const,
+                  content: buildConversationSummaryPrompt(conversationSummary.trim()),
+                },
+              ]
+            : []),
+          ...normalizeHistory(history),
+          {
+            role: 'user',
+            content: message,
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    return response;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('OpenRouter timed out after 40 seconds.');
+    }
+
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
 }
 
 export async function askOpenRouter(
   message: string,
-  history: ConversationHistoryMessage[] = [],
+  options: AskOpenRouterOptions = {},
 ) {
-  const response = await requestOpenRouter(message, history);
+  const response = await requestOpenRouter(message, options);
 
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
@@ -218,23 +302,28 @@ export async function askOpenRouter(
   }
 
   const parsedPayload = openRouterResponseSchema.parse(payload);
-  const rawContent = parsedPayload.choices[0]?.message.content?.trim() ?? '';
+  const firstChoice = parsedPayload.choices[0];
+  const rawContent = extractMessageText(firstChoice?.message.content ?? null);
   if (!rawContent) {
-    throw new Error('Model returned an empty response.');
+    const finishReason = firstChoice?.finish_reason ?? 'unknown';
+    const reasoningPresent = Boolean(firstChoice?.message.reasoning?.trim());
+    throw new Error(
+      `Model returned no visible text (finish_reason: ${finishReason}, reasoning_present: ${reasoningPresent}).`,
+    );
   }
 
-  return normalizeStructuredResponse(rawContent);
+  return normalizeAssistantResponse(rawContent);
 }
 
 export async function streamOpenRouter(
   message: string,
-  history: ConversationHistoryMessage[] = [],
+  options: AskOpenRouterOptions = {},
   handlers: {
     onDelta: (delta: string) => void;
     onDone: (payload: { text: string; image_tags: string[] }) => void;
   },
 ) {
-  const response = await requestOpenRouter(message, history, true);
+  const response = await requestOpenRouter(message, options, true);
   if (!response.ok || !response.body) {
     const payload = await response.json().catch(() => null);
     const providerMessage =

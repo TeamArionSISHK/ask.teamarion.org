@@ -20,13 +20,13 @@ function renderInline(text: string) {
 
     if (token.startsWith('**') && token.endsWith('**')) {
       nodes.push(
-        <strong key={`inline-${matchIndex++}`} className="font-semibold text-white">
+        <strong key={`inline-${matchIndex++}`} className="font-semibold text-[color:var(--text)]">
           {token.slice(2, -2)}
         </strong>,
       );
     } else if (token.startsWith('*') && token.endsWith('*')) {
       nodes.push(
-        <em key={`inline-${matchIndex++}`} className="italic text-slate-200">
+        <em key={`inline-${matchIndex++}`} className="italic text-[color:var(--muted)]">
           {token.slice(1, -1)}
         </em>,
       );
@@ -34,7 +34,7 @@ function renderInline(text: string) {
       nodes.push(
         <code
           key={`inline-${matchIndex++}`}
-          className="rounded bg-white/8 px-1.5 py-0.5 font-mono text-[0.92em] text-slate-100"
+          className="rounded-[0.45rem] border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-1.5 py-0.5 font-mono text-[0.92em] text-[color:var(--text)]"
         >
           {token.slice(1, -1)}
         </code>,
@@ -66,7 +66,7 @@ export function RichTextMessage({ text }: RichTextMessageProps) {
     }
 
     blocks.push(
-      <p key={`p-${key++}`} className="mt-0 whitespace-pre-wrap text-[1rem] leading-[1.68] text-slate-100">
+      <p key={`p-${key++}`} className="rich-text__paragraph">
         {renderInline(paragraphLines.join(' '))}
       </p>,
     );
@@ -79,7 +79,7 @@ export function RichTextMessage({ text }: RichTextMessageProps) {
     }
 
     blocks.push(
-      <ul key={`ul-${key++}`} className="mt-0 list-disc space-y-2 pl-5 text-[1rem] leading-[1.68] text-slate-100">
+      <ul key={`ul-${key++}`} className="rich-text__list">
         {listItems.map((item, index) => (
           <li key={`li-${key}-${index}`}>{renderInline(item)}</li>
         ))}
@@ -100,7 +100,9 @@ export function RichTextMessage({ text }: RichTextMessageProps) {
     if (/^-{3,}$/.test(trimmed)) {
       flushParagraph();
       flushList();
-      blocks.push(<hr key={`hr-${key++}`} className="border-0 border-t border-white/10" />);
+      blocks.push(
+        <hr key={`hr-${key++}`} className="border-0 border-t border-[color:var(--border)]" />,
+      );
       continue;
     }
 
@@ -112,10 +114,10 @@ export function RichTextMessage({ text }: RichTextMessageProps) {
       const content = headingMatch[2];
       const headingClass =
         level === 1
-          ? 'text-[1.2rem] font-semibold tracking-[-0.02em] text-white'
+          ? 'rich-text__heading rich-text__heading--one'
           : level === 2
-            ? 'text-[1.08rem] font-semibold tracking-[-0.015em] text-white'
-            : 'text-[0.96rem] font-semibold uppercase tracking-[0.08em] text-slate-200';
+            ? 'rich-text__heading rich-text__heading--two'
+            : 'rich-text__heading rich-text__heading--three';
 
       blocks.push(
         <div key={`h-${key++}`} className={headingClass}>

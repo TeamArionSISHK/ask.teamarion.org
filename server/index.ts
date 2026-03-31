@@ -3,6 +3,7 @@ import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
+import { appendConversationTurn, getConversationContext } from './conversation-store.js';
 import { imageAssets } from './data/imageMap.js';
 import { addRecentLog, getRecentLogs } from './log-store.js';
 import { askOpenRouter, streamOpenRouter } from './openrouter.js';
@@ -15,6 +16,7 @@ const port = Number.parseInt(process.env.PORT ?? '3001', 10);
 
 const requestSchema = z.object({
   message: z.string().trim().min(1).max(1200),
+  conversationId: z.string().trim().uuid().optional(),
   history: z
     .array(
       z.object({
@@ -58,16 +60,29 @@ app.post('/api/chat', async (request, response) => {
   }
 
   try {
+    const conversation = getConversationContext(parsed.data.conversationId);
     addRecentLog('info', 'chat', 'Received chat request.', {
       messagePreview: parsed.data.message.slice(0, 140),
       mode: 'non-stream',
-      historyCount: parsed.data.history.length,
+      conversationId: conversation.id,
+      recentHistoryCount: conversation.recentMessages.length,
+      summaryLength: conversation.summary.length,
+      clientHistoryCount: parsed.data.history.length,
     });
-    const payload = await askOpenRouter(parsed.data.message, parsed.data.history);
+    const payload = await askOpenRouter(parsed.data.message, {
+      history: conversation.recentMessages,
+      conversationSummary: conversation.summary,
+    });
+    appendConversationTurn(conversation.id, parsed.data.message, payload.text);
     addRecentLog('info', 'chat', 'Completed chat request.', {
+      conversationId: conversation.id,
       textPreview: payload.text.slice(0, 220),
     });
-    response.json(payload);
+    response.json({
+      ...payload,
+      conversationId: conversation.id,
+      conversationReset: conversation.reset,
+    });
   } catch (error) {
     console.error('Ask Arion chat request failed', error);
     addRecentLog('error', 'chat', 'Chat request failed.', error);
@@ -91,14 +106,24 @@ app.post('/api/chat/stream', async (request, response) => {
   response.setHeader('Connection', 'keep-alive');
 
   try {
+    const conversation = getConversationContext(parsed.data.conversationId);
     let lastSentText = '';
     addRecentLog('info', 'stream', 'Received streaming chat request.', {
       messagePreview: parsed.data.message.slice(0, 140),
       mode: 'stream',
-      historyCount: parsed.data.history.length,
+      conversationId: conversation.id,
+      recentHistoryCount: conversation.recentMessages.length,
+      summaryLength: conversation.summary.length,
+      clientHistoryCount: parsed.data.history.length,
     });
 
-    await streamOpenRouter(parsed.data.message, parsed.data.history, {
+    await streamOpenRouter(
+      parsed.data.message,
+      {
+        history: conversation.recentMessages,
+        conversationSummary: conversation.summary,
+      },
+      {
       onDelta: (text) => {
         const delta = text.slice(lastSentText.length);
         if (!delta) {
@@ -108,10 +133,21 @@ app.post('/api/chat/stream', async (request, response) => {
         response.write(`${JSON.stringify({ type: 'delta', delta })}\n`);
       },
       onDone: (payload) => {
+        appendConversationTurn(conversation.id, parsed.data.message, payload.text);
         addRecentLog('info', 'stream', 'Completed streaming chat request.', {
+          conversationId: conversation.id,
           textPreview: payload.text.slice(0, 220),
         });
-        response.write(`${JSON.stringify({ type: 'done', payload })}\n`);
+        response.write(
+          `${JSON.stringify({
+            type: 'done',
+            payload: {
+              ...payload,
+              conversationId: conversation.id,
+              conversationReset: conversation.reset,
+            },
+          })}\n`,
+        );
         response.end();
       },
     });
