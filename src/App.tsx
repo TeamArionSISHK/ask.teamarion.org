@@ -432,16 +432,6 @@ export default function App() {
                 </section>
 
                 <section className="privacy-modal__section">
-                  <h3 className="privacy-modal__section-title">Knowledge Base Use</h3>
-                  <p className="privacy-modal__copy">
-                    Ask Arion always uses the Team Arion knowledge base as the core source of truth
-                    for responses. Earlier parts of the same conversation may be summarised to keep
-                    context coherent, but conversations are not merged together and the knowledge
-                    base remains available throughout.
-                  </p>
-                </section>
-
-                <section className="privacy-modal__section">
                   <h3 className="privacy-modal__section-title">Data We Use</h3>
                   <p className="privacy-modal__copy">
                     We collect anonymized usage data, such as the number of queries and performance
