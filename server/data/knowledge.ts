@@ -8,6 +8,9 @@ export const teamKnowledge: KnowledgeSection[] = [
     title: 'Team identity',
     details: [
       'Team Arion is a team of students from Singapore International School (Hong Kong) competing in the global STEM Racing engineering and business challenge.',
+      'The school name in English is Singapore International School (Hong Kong).',
+      'The school name in Chinese is 新加坡国际学校（香港）.',
+      'The school short form is SISHK.',
       'The team represents Hong Kong and SISHK at STEM Racing World Finals 2026.',
       'STEM Racing World Finals 2026 takes place from October 3 to October 8, 2026.',
       'The event venue is Resorts World Sentosa, Singapore.',
@@ -359,6 +362,8 @@ export const teamKnowledge: KnowledgeSection[] = [
   {
     title: 'Contact channels',
     details: [
+      'Team Arion website: www.teamarion.org.',
+      'School website: www.singapore.edu.hk.',
       'For general questions or non-sponsorship matters, use teamarion@apps.singapore.edu.hk.',
       'For urgent matters or faster responses, the direct contact is Mark Yu — Team Leader — mark@teamarion.org.',
       'For partnership and sponsorship enquiries, the primary contact is Nithit Chanpongsang — Sponsorships Manager — chanpongsangnithit@apps.singapore.edu.hk.',
@@ -369,7 +374,7 @@ export const teamKnowledge: KnowledgeSection[] = [
     title: 'Social media and public presence',
     details: [
       'Instagram: teamarionhk.',
-      'LinkedIn: Team Arion.',
+      'LinkedIn: Team Arion (STEM Racing).',
     ],
   },
   {
@@ -397,6 +402,7 @@ export const assistantRules = [
   'You may use lightweight markdown for readability: **bold**, *italic*, short headings with ##, bullet points, and separator lines --- when genuinely helpful.',
   'Use emphasis sparingly and bold only the most important phrases, not entire paragraphs.',
   'Use only the supplied knowledge. Do not invent facts.',
+  'When responding in Chinese, do not translate brand or programme names such as Team Arion and STEM Racing.',
   'Do not reveal confidential or internal-only features, codenames, or undisclosed pit-display details.',
   'Do not provide the full list of original Team Arion members. If asked, say the original team membership was different and only confirm that Mark Yu and Nithit Chanpongsang were from the original team.',
   'If asked about confidential systems, say that some features are still under development for World Finals 2026 and cannot be shared publicly yet.',
