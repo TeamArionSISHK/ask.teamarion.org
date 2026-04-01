@@ -408,6 +408,27 @@ textarea,
   color: color-mix(in srgb, var(--accent) 84%, var(--text));
 }
 
+@media (prefers-color-scheme: dark) {
+  .prompt-card--follow-up {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(40, 42, 80, 0.96);
+  }
+
+  .prompt-card--follow-up:hover {
+    border-color: rgba(142, 122, 233, 0.48);
+    background: rgba(74, 59, 150, 0.58);
+    color: #f7f7ff;
+  }
+
+  .prompt-card--follow-up .prompt-card__text {
+    color: rgba(247, 247, 255, 0.82);
+  }
+
+  .prompt-card--follow-up:hover .prompt-card__text {
+    color: #ffffff;
+  }
+}
+
 .message-row {
   display: flex;
   margin-top: 12px;
@@ -651,6 +672,16 @@ textarea,
 
 .privacy-modal__link:hover {
   color: var(--accent-strong);
+}
+
+@media (prefers-color-scheme: dark) {
+  .privacy-modal__link {
+    color: #c7bbff;
+  }
+
+  .privacy-modal__link:hover {
+    color: #e2dcff;
+  }
 }
 
 .privacy-modal__list {

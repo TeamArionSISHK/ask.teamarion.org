@@ -143,10 +143,10 @@ export default function App() {
   const threadRef = useRef<HTMLDivElement | null>(null);
   const isEmptyState = messages.length === 1;
   const hasUserMessages = messages.some((message) => message.role === 'user');
-  const latestAssistantSuggestions = [...messages]
+  const latestAssistantMessage = [...messages]
     .reverse()
-    .find((message) => message.role === 'assistant' && message.suggestedPrompts?.length)
-    ?.suggestedPrompts;
+    .find((message) => message.role === 'assistant' && message.id !== 'welcome');
+  const latestAssistantSuggestions = latestAssistantMessage?.suggestedPrompts ?? [];
 
   useEffect(() => {
     const thread = threadRef.current;
@@ -348,7 +348,7 @@ export default function App() {
                 disabled={loading}
                 onSelect={(prompt) => void submitMessage(prompt)}
               />
-            ) : latestAssistantSuggestions?.length ? (
+            ) : latestAssistantSuggestions.length ? (
               <SuggestedPrompts
                 prompts={latestAssistantSuggestions}
                 disabled={loading}
