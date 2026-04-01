@@ -651,7 +651,9 @@ textarea,
   flex: 1 1 auto;
   min-height: 40px;
   max-height: 140px;
+  height: 40px;
   resize: none;
+  overflow-y: auto;
   border: 0;
   background: transparent;
   color: var(--text);

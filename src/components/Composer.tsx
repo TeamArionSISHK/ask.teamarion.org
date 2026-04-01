@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const PLACEHOLDERS = [
@@ -19,6 +19,17 @@ interface ComposerProps {
 export function Composer({ value, loading, onChange, onSubmit }: ComposerProps) {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+
+    input.style.height = '0px';
+    input.style.height = `${Math.min(input.scrollHeight, 140)}px`;
+  }, [value]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 700px)');
@@ -65,6 +76,7 @@ export function Composer({ value, loading, onChange, onSubmit }: ComposerProps) 
       </label>
 
       <textarea
+        ref={inputRef}
         id="chat-input"
         value={value}
         onChange={(event) => onChange(event.target.value)}
