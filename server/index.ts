@@ -2,11 +2,13 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { Request } from 'express';
 import { z } from 'zod';
 import { appendConversationTurn, getConversationContext } from './conversation-store.js';
 import { imageAssets } from './data/imageMap.js';
 import { addRecentLog, getRecentLogs } from './log-store.js';
 import { askOpenRouter, streamOpenRouter } from './openrouter.js';
+import { appendPromptAuditLog, getPromptAuditLogPath } from './prompt-audit.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -32,6 +34,55 @@ const requestSchema = z.object({
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use('/images', express.static(path.join(publicDir, 'images')));
+
+function getClientIp(request: Request) {
+  const cfIp = request.header('cf-connecting-ip')?.trim();
+  if (cfIp) {
+    return cfIp;
+  }
+
+  const forwardedFor = request.header('x-forwarded-for');
+  if (forwardedFor) {
+    const firstIp = forwardedFor
+      .split(',')
+      .map((part) => part.trim())
+      .find(Boolean);
+    if (firstIp) {
+      return firstIp;
+    }
+  }
+
+  return request.header('x-real-ip')?.trim() || request.socket.remoteAddress || '-';
+}
+
+function recordPromptAudit(
+  request: Request,
+  {
+    route,
+    mode,
+    conversationId,
+    prompt,
+  }: {
+    route: '/api/chat' | '/api/chat/stream';
+    mode: 'non-stream' | 'stream';
+    conversationId: string;
+    prompt: string;
+  },
+) {
+  void appendPromptAuditLog({
+    timestamp: new Date().toISOString(),
+    route,
+    mode,
+    conversationId,
+    prompt,
+    ip: getClientIp(request),
+    forwardedFor: request.header('x-forwarded-for') ?? undefined,
+    userAgent: request.header('user-agent') ?? undefined,
+    acceptLanguage: request.header('accept-language') ?? undefined,
+    referer: request.header('referer') ?? undefined,
+    host: request.header('host') ?? undefined,
+  });
+}
 
 app.get('/api/health', (_request, response) => {
   response.json({ ok: true });
@@ -61,6 +112,12 @@ app.post('/api/chat', async (request, response) => {
 
   try {
     const conversation = getConversationContext(parsed.data.conversationId);
+    recordPromptAudit(request, {
+      route: '/api/chat',
+      mode: 'non-stream',
+      conversationId: conversation.id,
+      prompt: parsed.data.message,
+    });
     addRecentLog('info', 'chat', 'Received chat request.', {
       messagePreview: parsed.data.message.slice(0, 140),
       mode: 'non-stream',
@@ -108,6 +165,12 @@ app.post('/api/chat/stream', async (request, response) => {
   try {
     const conversation = getConversationContext(parsed.data.conversationId);
     let lastSentText = '';
+    recordPromptAudit(request, {
+      route: '/api/chat/stream',
+      mode: 'stream',
+      conversationId: conversation.id,
+      prompt: parsed.data.message,
+    });
     addRecentLog('info', 'stream', 'Received streaming chat request.', {
       messagePreview: parsed.data.message.slice(0, 140),
       mode: 'stream',
@@ -172,5 +235,6 @@ app.get('/{*path}', (_request, response) => {
 
 app.listen(port, () => {
   addRecentLog('info', 'server', `Ask Arion server started on port ${port}.`);
+  addRecentLog('info', 'server', `Prompt audit log path: ${getPromptAuditLogPath()}`);
   console.log(`Ask Arion listening on http://0.0.0.0:${port}`);
 });

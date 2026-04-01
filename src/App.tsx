@@ -439,8 +439,10 @@ export default function App() {
                     Clarity for analytics and product understanding.
                   </p>
                   <p className="privacy-modal__copy">
-                    We do not intentionally store personal data. However, logs may be temporarily
-                    retained for debugging, monitoring, or security purposes.
+                    Ask Arion also keeps a server-side prompt audit log containing submitted
+                    prompts, timestamps, conversation IDs, IP-related request metadata, and browser
+                    headers such as user agent. This is used for operations, safety review, and
+                    debugging.
                   </p>
                 </section>
 
