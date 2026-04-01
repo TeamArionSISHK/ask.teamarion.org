@@ -17,7 +17,14 @@ interface AssistantResponsePayload {
   suggested_prompts: string[];
 }
 
+interface OpenRouterResolvedResponse {
+  response: Response;
+  model: string;
+}
+
 const OPENROUTER_TIMEOUT_MS = 40_000;
+const DEFAULT_PRIMARY_MODEL = 'qwen/qwen3.6-plus-preview:free';
+const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.5-27b';
 
 const openRouterResponseSchema = z.object({
   choices: z
@@ -337,6 +344,40 @@ function extractInlineInvitationPrompts(text: string) {
   return { cleanedText: trimmed, suggestedPrompts: [] as string[], invitation: '' };
 }
 
+function extractInvitationListPrompts(text: string) {
+  const trimmed = text.trim();
+  const match = trimmed.match(
+    /(?:^|\n|\s)(Would you like to know more about|Would you like to hear more about|I can also tell you about):\s*([\s\S]+)$/i,
+  );
+
+  if (!match || match.index === undefined) {
+    return { cleanedText: trimmed, suggestedPrompts: [] as string[], invitation: '' };
+  }
+
+  const rawList = match[2]
+    .split('\n')
+    .map((line) => cleanQuestionLine(line))
+    .filter(Boolean)
+    .slice(0, 5);
+
+  const prompts = normalizeSuggestedPrompts(
+    rawList
+      .map((line) => (line.endsWith('?') ? line : toQuestionPrompt(line)))
+      .filter(Boolean)
+      .slice(0, 3),
+  );
+
+  if (prompts.length < 2) {
+    return { cleanedText: trimmed, suggestedPrompts: [] as string[], invitation: '' };
+  }
+
+  return {
+    cleanedText: trimmed.slice(0, match.index).trim(),
+    suggestedPrompts: prompts,
+    invitation: match[1].trim(),
+  };
+}
+
 function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
   const trimmed = raw.trim();
   if (!trimmed) {
@@ -354,10 +395,19 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
     }
 
     const inlineInvitation = extractInlineInvitationPrompts(value);
+    if (inlineInvitation.suggestedPrompts.length) {
+      return {
+        text: inlineInvitation.cleanedText || value,
+        image_tags: [],
+        suggested_prompts: inlineInvitation.suggestedPrompts,
+      };
+    }
+
+    const invitationList = extractInvitationListPrompts(value);
     return {
-      text: inlineInvitation.cleanedText || value,
+      text: invitationList.cleanedText || value,
       image_tags: [],
-      suggested_prompts: inlineInvitation.suggestedPrompts,
+      suggested_prompts: invitationList.suggestedPrompts,
     };
   };
 
@@ -427,7 +477,66 @@ function normalizeHistory(history: ConversationHistoryMessage[]) {
     }));
 }
 
-async function requestOpenRouter(
+function resolveOpenRouterModels() {
+  const primary = (process.env.OPENROUTER_MODEL || DEFAULT_PRIMARY_MODEL).trim();
+  const fallback = (process.env.OPENROUTER_FALLBACK_MODEL || DEFAULT_FALLBACK_MODEL).trim();
+
+  if (!fallback || fallback === primary) {
+    return [primary];
+  }
+
+  return [primary, fallback];
+}
+
+function shouldRetryWithFallback(
+  status: number | null,
+  payload: unknown,
+  error: unknown,
+  currentModel: string,
+  attemptedModels: string[],
+) {
+  if (!attemptedModels.length || attemptedModels[attemptedModels.length - 1] !== currentModel) {
+    return false;
+  }
+
+  if (attemptedModels.length < 2) {
+    return false;
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (
+      message.includes('timed out') ||
+      message.includes('network') ||
+      message.includes('fetch failed') ||
+      message.includes('temporarily unavailable')
+    ) {
+      return true;
+    }
+  }
+
+  if (typeof status === 'number') {
+    if (status === 408 || status === 409 || status === 425 || status === 429) {
+      return true;
+    }
+
+    if (status >= 500) {
+      return true;
+    }
+  }
+
+  const payloadText = payload ? JSON.stringify(payload).toLowerCase() : '';
+  return (
+    payloadText.includes('no endpoints found') ||
+    payloadText.includes('provider returned error') ||
+    payloadText.includes('temporarily unavailable') ||
+    payloadText.includes('rate limit') ||
+    payloadText.includes('unreachable')
+  );
+}
+
+async function executeOpenRouterRequest(
+  model: string,
   message: string,
   { history = [], conversationSummary = '' }: AskOpenRouterOptions = {},
   stream = false,
@@ -437,7 +546,6 @@ async function requestOpenRouter(
     throw new Error('OPENROUTER_API_KEY is not configured.');
   }
 
-  const model = process.env.OPENROUTER_MODEL || 'qwen/qwen3.5-flash-02-23';
   const controller = new AbortController();
   const timeoutId = globalThis.setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
 
@@ -498,20 +606,52 @@ async function requestOpenRouter(
   }
 }
 
+async function requestOpenRouter(
+  message: string,
+  options: AskOpenRouterOptions = {},
+  stream = false,
+): Promise<OpenRouterResolvedResponse> {
+  const models = resolveOpenRouterModels();
+  let lastError: unknown = null;
+
+  for (let index = 0; index < models.length; index += 1) {
+    const model = models[index];
+
+    try {
+      const response = await executeOpenRouterRequest(model, message, options, stream);
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        if (index < models.length - 1 && shouldRetryWithFallback(response.status, payload, null, model, models)) {
+          continue;
+        }
+
+        const providerMessage =
+          payload && typeof payload === 'object' && 'error' in payload
+            ? JSON.stringify(payload.error)
+            : 'OpenRouter request failed.';
+        throw new Error(`${providerMessage} (model: ${model})`);
+      }
+
+      return { response, model };
+    } catch (error) {
+      lastError = error;
+      if (index < models.length - 1 && shouldRetryWithFallback(null, null, error, model, models)) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('OpenRouter request failed.');
+}
+
 export async function askOpenRouter(
   message: string,
   options: AskOpenRouterOptions = {},
 ) {
-  const response = await requestOpenRouter(message, options);
+  const { response, model } = await requestOpenRouter(message, options);
 
   const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const providerMessage =
-      payload && typeof payload === 'object' && 'error' in payload
-        ? JSON.stringify(payload.error)
-        : 'OpenRouter request failed.';
-    throw new Error(providerMessage);
-  }
 
   const parsedPayload = openRouterResponseSchema.parse(payload);
   const firstChoice = parsedPayload.choices[0];
@@ -520,7 +660,7 @@ export async function askOpenRouter(
     const finishReason = firstChoice?.finish_reason ?? 'unknown';
     const reasoningPresent = Boolean(firstChoice?.message.reasoning?.trim());
     throw new Error(
-      `Model returned no visible text (finish_reason: ${finishReason}, reasoning_present: ${reasoningPresent}).`,
+      `Model returned no visible text (model: ${model}, finish_reason: ${finishReason}, reasoning_present: ${reasoningPresent}).`,
     );
   }
 
@@ -535,14 +675,9 @@ export async function streamOpenRouter(
     onDone: (payload: AssistantResponsePayload) => void;
   },
 ) {
-  const response = await requestOpenRouter(message, options, true);
-  if (!response.ok || !response.body) {
-    const payload = await response.json().catch(() => null);
-    const providerMessage =
-      payload && typeof payload === 'object' && 'error' in payload
-        ? JSON.stringify(payload.error)
-        : 'OpenRouter request failed.';
-    throw new Error(providerMessage);
+  const { response, model } = await requestOpenRouter(message, options, true);
+  if (!response.body) {
+    throw new Error(`OpenRouter stream body missing (model: ${model}).`);
   }
 
   const reader = response.body.getReader();

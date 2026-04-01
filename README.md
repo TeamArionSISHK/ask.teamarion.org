@@ -34,7 +34,8 @@ Create `.env` for the backend:
 
 ```bash
 OPENROUTER_API_KEY=sk-or-...
-OPENROUTER_MODEL=qwen/qwen3.5-27b
+OPENROUTER_MODEL=qwen/qwen3.6-plus-preview:free
+OPENROUTER_FALLBACK_MODEL=qwen/qwen3.5-27b
 OPENROUTER_SITE_URL=
 OPENROUTER_APP_NAME=Ask Arion
 PORT=3001
