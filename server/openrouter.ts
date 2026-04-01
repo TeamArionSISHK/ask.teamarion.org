@@ -22,6 +22,14 @@ interface OpenRouterResolvedResponse {
   model: string;
 }
 
+interface OpenRouterCompletionResponse {
+  model: string;
+  payload: unknown;
+  rawText: string;
+  status: number;
+  contentType: string | null;
+}
+
 const OPENROUTER_TIMEOUT_MS = 40_000;
 const DEFAULT_PRIMARY_MODEL = 'qwen/qwen3.5-27b';
 const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.6-plus-preview:free';
@@ -539,8 +547,46 @@ function shouldRetryWithFallback(
     payloadText.includes('provider returned error') ||
     payloadText.includes('temporarily unavailable') ||
     payloadText.includes('rate limit') ||
-    payloadText.includes('unreachable')
+    payloadText.includes('unreachable') ||
+    payloadText.includes('reasoning is mandatory')
   );
+}
+
+function summarizeBodyPreview(rawText: string) {
+  const compact = rawText.replace(/\s+/g, ' ').trim();
+  if (!compact) {
+    return '[empty]';
+  }
+
+  return compact.slice(0, 240);
+}
+
+async function readOpenRouterPayload(response: Response) {
+  const rawText = await response.text().catch(() => '');
+  const contentType = response.headers.get('content-type');
+  const trimmed = rawText.trim();
+
+  if (!trimmed) {
+    return {
+      payload: null as unknown,
+      rawText,
+      contentType,
+    };
+  }
+
+  try {
+    return {
+      payload: JSON.parse(trimmed) as unknown,
+      rawText,
+      contentType,
+    };
+  } catch {
+    return {
+      payload: null as unknown,
+      rawText,
+      contentType,
+    };
+  }
 }
 
 async function executeOpenRouterRequest(
@@ -659,15 +705,72 @@ async function requestOpenRouter(
   throw lastError instanceof Error ? lastError : new Error('OpenRouter request failed.');
 }
 
+async function requestOpenRouterCompletion(
+  message: string,
+  options: AskOpenRouterOptions = {},
+): Promise<OpenRouterCompletionResponse> {
+  const models = resolveOpenRouterModels();
+  let lastError: unknown = null;
+
+  for (let index = 0; index < models.length; index += 1) {
+    const model = models[index];
+
+    try {
+      const response = await executeOpenRouterRequest(model, message, options, false);
+      const { payload, rawText, contentType } = await readOpenRouterPayload(response);
+
+      if (!response.ok) {
+        if (
+          index < models.length - 1 &&
+          shouldRetryWithFallback(response.status, payload, null, model, models)
+        ) {
+          continue;
+        }
+
+        const providerMessage =
+          payload && typeof payload === 'object' && 'error' in payload
+            ? JSON.stringify(payload.error)
+            : `OpenRouter request failed with status ${response.status}, content-type ${contentType ?? 'unknown'}, body ${summarizeBodyPreview(rawText)}`;
+        throw new Error(`${providerMessage} (model: ${model})`);
+      }
+
+      const parsed = openRouterResponseSchema.safeParse(payload);
+      if (!parsed.success) {
+        if (index < models.length - 1) {
+          continue;
+        }
+
+        throw new Error(
+          `OpenRouter returned an invalid success body (status: ${response.status}, content-type: ${contentType ?? 'unknown'}, body: ${summarizeBodyPreview(rawText)}, model: ${model})`,
+        );
+      }
+
+      return {
+        model,
+        payload: parsed.data,
+        rawText,
+        status: response.status,
+        contentType,
+      };
+    } catch (error) {
+      lastError = error;
+      if (index < models.length - 1 && shouldRetryWithFallback(null, null, error, model, models)) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('OpenRouter request failed.');
+}
+
 export async function askOpenRouter(
   message: string,
   options: AskOpenRouterOptions = {},
 ) {
-  const { response, model } = await requestOpenRouter(message, options);
+  const { payload, model } = await requestOpenRouterCompletion(message, options);
 
-  const payload = await response.json().catch(() => null);
-
-  const parsedPayload = openRouterResponseSchema.parse(payload);
+  const parsedPayload = payload as z.infer<typeof openRouterResponseSchema>;
   const firstChoice = parsedPayload.choices[0];
   const rawContent = extractMessageText(firstChoice?.message.content ?? null);
   if (!rawContent) {
