@@ -220,7 +220,9 @@ export const teamKnowledge: KnowledgeSection[] = [
       'Team Arion uses a structured digital strategy that includes SEO, technical optimisation, and a deliberate online presence.',
       'The team tracks digital performance and audience behaviour as part of a data-driven media approach.',
       'Ask Arion can be described as part of Team Arion’s digital engagement and knowledge system.',
-      'The team has also turned sponsor support into branded digital content, such as the Shapr3D hoodie campaign tied to Enterprise Plan support and sustainability-aligned DHL GoGreen shipping.',
+      'The team has also turned sponsor support into branded digital content, such as the Shapr3D hoodie campaign tied to Enterprise Plan support.',
+      'DHL is not a Team Arion sponsor.',
+      'The team used DHL GoGreen as a sustainability-aligned shipping service, but DHL did not sponsor the team.',
     ],
   },
   {
