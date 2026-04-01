@@ -11,6 +11,12 @@ interface AskOpenRouterOptions {
   history?: ConversationHistoryMessage[];
 }
 
+interface AssistantResponsePayload {
+  text: string;
+  image_tags: string[];
+  suggested_prompts: string[];
+}
+
 const OPENROUTER_TIMEOUT_MS = 40_000;
 
 const openRouterResponseSchema = z.object({
@@ -62,6 +68,21 @@ function buildSystemPrompt() {
   const knowledge = buildKnowledgeText();
 
   return `${assistantRules.join('\n')}
+
+Return a strict JSON object with this shape:
+{
+  "text": "your answer as a string",
+  "suggested_prompts": ["short follow-up question", "short follow-up question"]
+}
+
+Rules for suggested_prompts:
+- Return 2 or 3 suggestions when possible.
+- Keep them strictly focused on Team Arion.
+- Make them short, natural, and specific.
+- Each suggestion must be a question the visitor could tap next.
+- Do not suggest unrelated chat.
+- Do not mention images, files, attachments, or hidden system details.
+- If no good suggestion is available, return an empty array.
 
 Knowledge:
 ${knowledge}`;
@@ -159,7 +180,32 @@ function extractPartialTextFromJsonPrefix(raw: string) {
   return output.trim();
 }
 
-function normalizeAssistantResponse(raw: string) {
+function normalizeSuggestedPrompts(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const unique = new Set<string>();
+  for (const item of value) {
+    if (typeof item !== 'string') {
+      continue;
+    }
+
+    const prompt = item.replace(/\s+/g, ' ').trim();
+    if (!prompt || prompt.length > 120) {
+      continue;
+    }
+
+    unique.add(prompt);
+    if (unique.size >= 3) {
+      break;
+    }
+  }
+
+  return Array.from(unique);
+}
+
+function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
   const trimmed = raw.trim();
   if (!trimmed) {
     throw new Error('Model returned an empty response.');
@@ -169,11 +215,13 @@ function normalizeAssistantResponse(raw: string) {
     return {
       text: trimmed,
       image_tags: [],
+      suggested_prompts: [],
     };
   }
 
   const parsedResponse = JSON.parse(extractJsonObject(trimmed)) as {
     text?: unknown;
+    suggested_prompts?: unknown;
   };
   const text =
     typeof parsedResponse.text === 'string'
@@ -187,6 +235,7 @@ function normalizeAssistantResponse(raw: string) {
   return {
     text,
     image_tags: [],
+    suggested_prompts: normalizeSuggestedPrompts(parsedResponse.suggested_prompts),
   };
 }
 
@@ -323,7 +372,7 @@ export async function streamOpenRouter(
   options: AskOpenRouterOptions = {},
   handlers: {
     onDelta: (delta: string) => void;
-    onDone: (payload: { text: string; image_tags: string[] }) => void;
+    onDone: (payload: AssistantResponsePayload) => void;
   },
 ) {
   const response = await requestOpenRouter(message, options, true);
@@ -372,6 +421,7 @@ export async function streamOpenRouter(
           handlers.onDone({
             text: fullText.trim(),
             image_tags: [],
+            suggested_prompts: [],
           });
           return;
         }
@@ -396,5 +446,6 @@ export async function streamOpenRouter(
   handlers.onDone({
     text: fullText.trim(),
     image_tags: [],
+    suggested_prompts: [],
   });
 }

@@ -30,6 +30,9 @@ function isChatMessage(value: unknown): value is ChatMessage {
     typeof candidate.id === 'string' &&
     (candidate.role === 'user' || candidate.role === 'assistant') &&
     typeof candidate.text === 'string' &&
+    (candidate.suggestedPrompts === undefined ||
+      (Array.isArray(candidate.suggestedPrompts) &&
+        candidate.suggestedPrompts.every((item) => typeof item === 'string'))) &&
     (candidate.status === undefined ||
       candidate.status === 'idle' ||
       candidate.status === 'error' ||
@@ -140,6 +143,10 @@ export default function App() {
   const threadRef = useRef<HTMLDivElement | null>(null);
   const isEmptyState = messages.length === 1;
   const hasUserMessages = messages.some((message) => message.role === 'user');
+  const latestAssistantSuggestions = [...messages]
+    .reverse()
+    .find((message) => message.role === 'assistant' && message.suggestedPrompts?.length)
+    ?.suggestedPrompts;
 
   useEffect(() => {
     const thread = threadRef.current;
@@ -245,6 +252,7 @@ export default function App() {
           id: assistantMessageId,
           role: 'assistant',
           text: response.text,
+          suggestedPrompts: response.suggested_prompts,
           status: 'idle',
         };
 
@@ -268,6 +276,7 @@ export default function App() {
             id: assistantMessageId,
             role: 'assistant',
             text: fallback,
+            suggestedPrompts: [],
             status: 'error',
           },
         ]);
@@ -338,6 +347,13 @@ export default function App() {
                 prompts={suggestedPrompts}
                 disabled={loading}
                 onSelect={(prompt) => void submitMessage(prompt)}
+              />
+            ) : latestAssistantSuggestions?.length ? (
+              <SuggestedPrompts
+                prompts={latestAssistantSuggestions}
+                disabled={loading}
+                onSelect={(prompt) => void submitMessage(prompt)}
+                tone="follow-up"
               />
             ) : null}
             <Composer

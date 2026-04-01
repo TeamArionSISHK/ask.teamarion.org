@@ -12,6 +12,7 @@ export interface ChatApiRequest {
 export interface ChatApiResponse {
   text: string;
   image_tags: string[];
+  suggested_prompts: string[];
   conversationId: string;
   conversationReset?: boolean;
 }
@@ -27,6 +28,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   images?: ChatImage[];
+  suggestedPrompts?: string[];
   status?: 'idle' | 'error' | 'streaming';
 }
 
