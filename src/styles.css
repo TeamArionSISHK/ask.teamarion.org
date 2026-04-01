@@ -499,42 +499,37 @@ textarea,
   margin-top: 0.9rem;
 }
 
-.message-card__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+.message-card__links {
+  margin-top: 0.95rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  color: var(--subtle);
+  font-size: 0.82rem;
+  line-height: 1.6;
 }
 
-.message-card__action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 32px;
-  padding: 0 11px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-solid) 82%, transparent);
+.message-card__links-label {
   color: var(--muted);
-  text-decoration: none;
-  transition:
-    border-color var(--t-fast) var(--ease),
-    background var(--t-fast) var(--ease),
-    color var(--t-fast) var(--ease);
-}
-
-.message-card__action:hover {
-  border-color: var(--border-strong);
-  background: color-mix(in srgb, var(--surface-solid) 84%, var(--accent-soft));
-  color: color-mix(in srgb, var(--accent) 84%, var(--text));
-}
-
-.message-card__action-text {
-  font-size: 0.77rem;
-  line-height: 1.2;
   font-weight: 500;
+}
+
+.message-card__links-separator {
+  color: color-mix(in srgb, var(--subtle) 70%, transparent);
+}
+
+.message-card__inline-link {
+  color: color-mix(in srgb, var(--accent) 80%, var(--text));
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 44%, transparent);
+  text-underline-offset: 0.18em;
+  transition:
+    color var(--t-fast) var(--ease),
+    text-decoration-color var(--t-fast) var(--ease);
+}
+
+.message-card__inline-link:hover {
+  color: color-mix(in srgb, var(--accent) 92%, white);
+  text-decoration-color: color-mix(in srgb, var(--accent) 72%, transparent);
 }
 
 .message-card__cursor {
@@ -577,20 +572,24 @@ textarea,
 }
 
 @media (prefers-color-scheme: dark) {
-  .message-card__actions {
+  .message-card__links {
     border-top-color: rgba(255, 255, 255, 0.1);
+    color: rgba(223, 226, 248, 0.76);
   }
 
-  .message-card__action {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(40, 42, 80, 0.96);
-    color: rgba(247, 247, 255, 0.84);
+  .message-card__links-label,
+  .message-card__links-separator {
+    color: rgba(196, 201, 232, 0.64);
   }
 
-  .message-card__action:hover {
-    border-color: rgba(142, 122, 233, 0.48);
-    background: rgba(74, 59, 150, 0.58);
+  .message-card__inline-link {
+    color: rgba(186, 171, 255, 0.94);
+    text-decoration-color: rgba(186, 171, 255, 0.42);
+  }
+
+  .message-card__inline-link:hover {
     color: #ffffff;
+    text-decoration-color: rgba(220, 212, 255, 0.8);
   }
 }
 

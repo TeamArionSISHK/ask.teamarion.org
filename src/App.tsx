@@ -174,10 +174,6 @@ export default function App() {
     .reverse()
     .find((message) => message.role === 'assistant' && message.id !== 'welcome');
   const latestAssistantSuggestions = latestAssistantMessage?.suggestedPrompts ?? [];
-  const latestAssistantHasOfficialActions = Boolean(latestAssistantMessage?.officialActions?.length);
-  const displayedAssistantSuggestions = latestAssistantHasOfficialActions
-    ? latestAssistantSuggestions.slice(0, 2)
-    : latestAssistantSuggestions;
 
   useEffect(() => {
     const thread = threadRef.current;
@@ -388,9 +384,9 @@ export default function App() {
                 disabled={loading}
                 onSelect={(prompt) => void submitMessage(prompt)}
               />
-            ) : displayedAssistantSuggestions.length ? (
+            ) : latestAssistantSuggestions.length ? (
               <SuggestedPrompts
-                prompts={displayedAssistantSuggestions}
+                prompts={latestAssistantSuggestions}
                 disabled={loading}
                 onSelect={(prompt) => void submitMessage(prompt)}
                 tone="follow-up"
