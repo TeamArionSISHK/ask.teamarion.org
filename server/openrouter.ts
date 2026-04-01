@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { assistantRules, teamKnowledge, type KnowledgeSection } from './data/knowledge.js';
+import { deriveOfficialActions, type OfficialActionPayload } from './official-actions.js';
 
 interface ConversationHistoryMessage {
   role: 'user' | 'assistant';
@@ -15,6 +16,7 @@ interface AssistantResponsePayload {
   text: string;
   image_tags: string[];
   suggested_prompts: string[];
+  official_actions: OfficialActionPayload[];
 }
 
 interface OpenRouterResolvedResponse {
@@ -386,7 +388,7 @@ function extractInvitationListPrompts(text: string) {
   };
 }
 
-function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
+function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResponsePayload {
   const trimmed = raw.trim();
   if (!trimmed) {
     throw new Error('Model returned an empty response.');
@@ -399,6 +401,7 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
         text: extracted.cleanedText || value,
         image_tags: [],
         suggested_prompts: extracted.suggestedPrompts,
+        official_actions: deriveOfficialActions(extracted.cleanedText || value, userPrompt),
       };
     }
 
@@ -408,6 +411,7 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
         text: inlineInvitation.cleanedText || value,
         image_tags: [],
         suggested_prompts: inlineInvitation.suggestedPrompts,
+        official_actions: deriveOfficialActions(inlineInvitation.cleanedText || value, userPrompt),
       };
     }
 
@@ -416,6 +420,7 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
       text: invitationList.cleanedText || value,
       image_tags: [],
       suggested_prompts: invitationList.suggestedPrompts,
+      official_actions: deriveOfficialActions(invitationList.cleanedText || value, userPrompt),
     };
   };
 
@@ -443,6 +448,7 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
           text: cleanedInline.cleanedText || resolvedText,
           image_tags: [],
           suggested_prompts: normalizedPrompts,
+          official_actions: deriveOfficialActions(cleanedInline.cleanedText || resolvedText, userPrompt),
         };
       }
 
@@ -778,7 +784,7 @@ export async function askOpenRouter(
     );
   }
 
-  return normalizeAssistantResponse(rawContent);
+  return normalizeAssistantResponse(rawContent, message);
 }
 
 export async function streamOpenRouter(
@@ -831,6 +837,7 @@ export async function streamOpenRouter(
             text: fullText.trim(),
             image_tags: [],
             suggested_prompts: [],
+            official_actions: [],
           });
           return;
         }
@@ -856,5 +863,6 @@ export async function streamOpenRouter(
     text: fullText.trim(),
     image_tags: [],
     suggested_prompts: [],
+    official_actions: [],
   });
 }

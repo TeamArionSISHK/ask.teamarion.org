@@ -367,6 +367,7 @@ export const teamKnowledge: KnowledgeSection[] = [
     title: 'Contact channels',
     details: [
       'Team Arion website: www.teamarion.org.',
+      'STEM Racing website: www.stemracing.com.',
       'School website: www.singapore.edu.hk.',
       'For general questions or non-sponsorship matters, use teamarion@apps.singapore.edu.hk.',
       'For urgent matters or faster responses, the direct contact is Mark Yu — Team Leader — mark@teamarion.org.',
@@ -377,8 +378,27 @@ export const teamKnowledge: KnowledgeSection[] = [
   {
     title: 'Social media and public presence',
     details: [
-      'Instagram: teamarionhk.',
-      'LinkedIn: Team Arion (STEM Racing).',
+      'Instagram: teamarionhk at https://www.instagram.com/teamarionhk/.',
+      'LinkedIn: Team Arion (STEM Racing) at https://www.linkedin.com/company/teamarion/.',
+      'GitHub organisation: https://github.com/TeamArionSISHK.',
+    ],
+  },
+  {
+    title: 'Open source engineering',
+    details: [
+      'Team Arion develops internal tools, web systems, and engineering utilities as part of its competition workflow.',
+      'Where appropriate, the team releases selected projects as open source so other student engineers can learn, build, and innovate.',
+      'The team believes strong engineering includes documentation, reproducibility, and knowledge sharing.',
+      'A concise explanation is: Engineering progress accelerates when knowledge is shared. Open sourcing selected projects helps support other student engineering teams, contributes to a culture of shared learning, keeps work transparent and well documented, encourages reproducible engineering practices, and gives back to the global STEM community.',
+      'PurpleReaction is a Windows-based reaction-time measurement tool written in C++ and designed around a low-latency architecture.',
+      'PurpleReaction uses Win32, DirectX 11, Raw Input, and QueryPerformanceCounter to reduce software overhead and capture timing as close to the system level as possible.',
+      'PurpleReaction runs in exclusive fullscreen with a simple black-to-white visual stimulus, supports multi-trial runs, per-trial and average statistics, and CSV export, and is built for controlled testing and accurate human-response measurement on standard Windows PCs.',
+      'ProPit is the interactive touchscreen interface developed for Team Arion’s Professional Class competition pit display.',
+      'ProPit was implemented as a static web application using HTML, CSS, and JavaScript, and included features such as an embedded 3D model viewer, portfolio showcases, and more.',
+      'ProPit reflects Team Arion’s approach to combining engineering communication, digital design, and physical presentation into a cohesive competition experience.',
+      'PurpleShortener is Team Arion’s internal URL-shortening and outbound-link system, built as static, version-controlled web infrastructure for reliability and security.',
+      'PurpleShortener uses YAML-defined redirects compiled into a static router deployed on Cloudflare Pages, with outbound warning pages for external links.',
+      'PurpleShortener reflects Team Arion’s approach to treating web infrastructure as part of engineering operations rather than an afterthought.',
     ],
   },
   {
