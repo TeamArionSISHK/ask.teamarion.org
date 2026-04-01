@@ -23,8 +23,8 @@ interface OpenRouterResolvedResponse {
 }
 
 const OPENROUTER_TIMEOUT_MS = 40_000;
-const DEFAULT_PRIMARY_MODEL = 'qwen/qwen3.6-plus-preview:free';
-const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.5-27b';
+const DEFAULT_PRIMARY_MODEL = 'qwen/qwen3.5-27b';
+const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.6-plus-preview:free';
 
 const openRouterResponseSchema = z.object({
   choices: z
@@ -488,6 +488,14 @@ function resolveOpenRouterModels() {
   return [primary, fallback];
 }
 
+function shouldOmitReasoningOverride(model: string) {
+  const normalized = model.trim().toLowerCase();
+  return (
+    normalized === 'qwen/qwen3.6-plus-preview:free' ||
+    normalized === 'qwen/qwen3.5-27b'
+  );
+}
+
 function shouldRetryWithFallback(
   status: number | null,
   payload: unknown,
@@ -550,6 +558,40 @@ async function executeOpenRouterRequest(
   const timeoutId = globalThis.setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
 
   try {
+    const requestBody = {
+      model,
+      temperature: 0.2,
+      max_tokens: 320,
+      stream,
+      messages: [
+        {
+          role: 'system',
+          content: stream ? buildStreamingPrompt() : buildSystemPrompt(),
+        },
+        ...(conversationSummary.trim()
+          ? [
+              {
+                role: 'system' as const,
+                content: buildConversationSummaryPrompt(conversationSummary.trim()),
+              },
+            ]
+          : []),
+        ...normalizeHistory(history),
+        {
+          role: 'user' as const,
+          content: message,
+        },
+      ],
+      ...(shouldOmitReasoningOverride(model)
+        ? {}
+        : {
+            reasoning: {
+              effort: 'none',
+              exclude: true,
+            },
+          }),
+    };
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -562,35 +604,7 @@ async function executeOpenRouterRequest(
           ? { 'X-Title': process.env.OPENROUTER_APP_NAME }
           : {}),
       },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        max_tokens: 320,
-        reasoning: {
-          effort: 'none',
-          exclude: true,
-        },
-        stream,
-        messages: [
-          {
-            role: 'system',
-            content: stream ? buildStreamingPrompt() : buildSystemPrompt(),
-          },
-          ...(conversationSummary.trim()
-            ? [
-                {
-                  role: 'system' as const,
-                  content: buildConversationSummaryPrompt(conversationSummary.trim()),
-                },
-              ]
-            : []),
-          ...normalizeHistory(history),
-          {
-            role: 'user',
-            content: message,
-          },
-        ],
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     });
 

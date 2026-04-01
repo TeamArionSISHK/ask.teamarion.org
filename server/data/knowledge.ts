@@ -62,7 +62,9 @@ export const teamKnowledge: KnowledgeSection[] = [
   {
     title: 'Competition achievements',
     details: [
+      'The Professional Class Regional Finals, also referred to as the Hong Kong and Macau Finals or HKMO Finals, took place in December 2025.',
       'At the STEM Racing Hong Kong and Macau Finals, Team Arion won Champion, Best Engineered Car, the Fastest Car Award with a 1.131 second run, the Scrutineering Award, the Team Identity Award, and Best Pit Display.',
+      'The Development Class Finals took place in late August 2025.',
       'In Hong Kong Development Class in August 2025, the team won Champion and the Best Engineered Car Award.',
       'Confluence/25P best recorded time was 1.131 seconds.',
       'The team can credibly describe itself as a multiple-award-winning programme with fastest-car and best-engineered-car recognition.',
