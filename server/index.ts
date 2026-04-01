@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import type { Request } from 'express';
 import { z } from 'zod';
 import { appendConversationTurn, getConversationContext } from './conversation-store.js';
@@ -10,8 +9,7 @@ import { addRecentLog, getRecentLogs } from './log-store.js';
 import { askOpenRouter, streamOpenRouter } from './openrouter.js';
 import { appendPromptAuditLog, getPromptAuditLogPath } from './prompt-audit.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, '..');
+const rootDir = process.cwd();
 const clientDistDir = path.resolve(rootDir, 'dist');
 const publicDir = path.resolve(rootDir, 'public');
 const port = Number.parseInt(process.env.PORT ?? '3001', 10);
