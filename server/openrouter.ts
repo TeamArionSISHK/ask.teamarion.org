@@ -76,13 +76,15 @@ Return a strict JSON object with this shape:
 }
 
 Rules for suggested_prompts:
-- Return 2 or 3 suggestions when possible.
+- Return 2 or 3 suggestions on normal informative replies.
 - Keep them strictly focused on Team Arion.
 - Make them short, natural, and specific.
 - Each suggestion must be a question the visitor could tap next.
 - Do not suggest unrelated chat.
 - Do not mention images, files, attachments, or hidden system details.
-- If no good suggestion is available, return an empty array.
+- Do not place follow-up questions inside the text field.
+- Put follow-up questions only inside suggested_prompts.
+- Use an empty array only if the conversation is clearly ending, the user is refusing to engage, or no sensible Team Arion follow-up exists.
 
 Knowledge:
 ${knowledge}`;
@@ -205,6 +207,57 @@ function normalizeSuggestedPrompts(value: unknown) {
   return Array.from(unique);
 }
 
+function cleanQuestionLine(value: string) {
+  return value
+    .replace(/^[-*•\d.)\s]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractTrailingSuggestedPrompts(text: string) {
+  const paragraphs = text
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!paragraphs.length) {
+    return { cleanedText: text.trim(), suggestedPrompts: [] as string[] };
+  }
+
+  const lastParagraph = paragraphs[paragraphs.length - 1];
+  const lines = lastParagraph
+    .split('\n')
+    .map((line) => cleanQuestionLine(line))
+    .filter(Boolean);
+
+  const candidateLines = lines.filter((line) => line.endsWith('?'));
+  if (candidateLines.length >= 2 && candidateLines.length <= 3 && candidateLines.length === lines.length) {
+    return {
+      cleanedText: paragraphs.slice(0, -1).join('\n\n').trim(),
+      suggestedPrompts: normalizeSuggestedPrompts(candidateLines),
+    };
+  }
+
+  if (paragraphs.length >= 2) {
+    const maybeLabel = paragraphs[paragraphs.length - 2].toLowerCase();
+    if (
+      maybeLabel.includes('follow-up') ||
+      maybeLabel.includes('next question') ||
+      maybeLabel.includes('next prompt')
+    ) {
+      const questions = normalizeSuggestedPrompts(candidateLines);
+      if (questions.length >= 2) {
+        return {
+          cleanedText: paragraphs.slice(0, -2).join('\n\n').trim(),
+          suggestedPrompts: questions,
+        };
+      }
+    }
+  }
+
+  return { cleanedText: text.trim(), suggestedPrompts: [] as string[] };
+}
+
 function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
   const trimmed = raw.trim();
   if (!trimmed) {
@@ -232,10 +285,20 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
     throw new Error('Model returned an empty response.');
   }
 
+  const normalizedPrompts = normalizeSuggestedPrompts(parsedResponse.suggested_prompts);
+  if (normalizedPrompts.length) {
+    return {
+      text,
+      image_tags: [],
+      suggested_prompts: normalizedPrompts,
+    };
+  }
+
+  const extracted = extractTrailingSuggestedPrompts(text);
   return {
-    text,
+    text: extracted.cleanedText || text,
     image_tags: [],
-    suggested_prompts: normalizeSuggestedPrompts(parsedResponse.suggested_prompts),
+    suggested_prompts: extracted.suggestedPrompts,
   };
 }
 
