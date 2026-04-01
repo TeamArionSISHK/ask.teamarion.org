@@ -25,6 +25,17 @@ const allowedOrigins = new Set(
     .map((value) => value.trim())
     .filter(Boolean),
 );
+const allowedHosts = new Set(
+  Array.from(allowedOrigins)
+    .map((value) => {
+      try {
+        return new URL(value).host;
+      } catch {
+        return null;
+      }
+    })
+    .filter((value): value is string => Boolean(value)),
+);
 const rateLimitWindowMs = Number.parseInt(process.env.ASK_ARION_RATE_LIMIT_WINDOW_MS ?? '60000', 10);
 const rateLimitMaxRequests = Number.parseInt(
   process.env.ASK_ARION_RATE_LIMIT_MAX_REQUESTS ?? '24',
@@ -94,9 +105,20 @@ function extractOriginCandidate(value: string | undefined) {
   }
 }
 
+function looksLikeBrowserUserAgent(value: string | undefined) {
+  const normalized = value?.toLowerCase() ?? '';
+  if (!normalized) {
+    return false;
+  }
+
+  return /(mozilla|chrome|safari|firefox|edg|opera|opr|mobile|webkit)/.test(normalized);
+}
+
 function isAllowedOriginRequest(request: Request) {
   const origin = extractOriginCandidate(request.header('origin') ?? undefined);
   const referer = extractOriginCandidate(request.header('referer') ?? undefined);
+  const host = request.header('host')?.trim().toLowerCase() ?? '';
+  const userAgent = request.header('user-agent') ?? undefined;
 
   if (origin && allowedOrigins.has(origin)) {
     return true;
@@ -107,6 +129,10 @@ function isAllowedOriginRequest(request: Request) {
   }
 
   if (!origin && !referer && isLoopbackIp(getClientIp(request))) {
+    return true;
+  }
+
+  if (!origin && !referer && host && allowedHosts.has(host) && looksLikeBrowserUserAgent(userAgent)) {
     return true;
   }
 
