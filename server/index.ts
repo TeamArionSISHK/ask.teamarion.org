@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'node:path';
-import type { Request } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import { appendConversationTurn, getConversationContext } from './conversation-store.js';
 import { imageAssets } from './data/imageMap.js';
@@ -13,6 +13,24 @@ const rootDir = process.cwd();
 const clientDistDir = path.resolve(rootDir, 'dist');
 const publicDir = path.resolve(rootDir, 'public');
 const port = Number.parseInt(process.env.PORT ?? '3001', 10);
+const defaultAllowedOrigins = [
+  'https://ask.teamarion.org',
+  `http://localhost:${port}`,
+  `http://127.0.0.1:${port}`,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
+const allowedOrigins = new Set(
+  (process.env.ASK_ARION_ALLOWED_ORIGINS?.split(',') ?? defaultAllowedOrigins)
+    .map((value) => value.trim())
+    .filter(Boolean),
+);
+const rateLimitWindowMs = Number.parseInt(process.env.ASK_ARION_RATE_LIMIT_WINDOW_MS ?? '60000', 10);
+const rateLimitMaxRequests = Number.parseInt(
+  process.env.ASK_ARION_RATE_LIMIT_MAX_REQUESTS ?? '24',
+  10,
+);
+const rateLimitBuckets = new Map<string, number[]>();
 
 const requestSchema = z.object({
   message: z.string().trim().min(1).max(1200),
@@ -32,6 +50,7 @@ const requestSchema = z.object({
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use('/images', express.static(path.join(publicDir, 'images')));
+app.use('/api', apiProtectionMiddleware);
 
 function getClientIp(request: Request) {
   const cfIp = request.header('cf-connecting-ip')?.trim();
@@ -51,6 +70,112 @@ function getClientIp(request: Request) {
   }
 
   return request.header('x-real-ip')?.trim() || request.socket.remoteAddress || '-';
+}
+
+function isLoopbackIp(value: string) {
+  return (
+    value === '127.0.0.1' ||
+    value === '::1' ||
+    value === '::ffff:127.0.0.1' ||
+    value === 'localhost'
+  );
+}
+
+function extractOriginCandidate(value: string | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedOriginRequest(request: Request) {
+  const origin = extractOriginCandidate(request.header('origin') ?? undefined);
+  const referer = extractOriginCandidate(request.header('referer') ?? undefined);
+
+  if (origin && allowedOrigins.has(origin)) {
+    return true;
+  }
+
+  if (referer && allowedOrigins.has(referer)) {
+    return true;
+  }
+
+  if (!origin && !referer && isLoopbackIp(getClientIp(request))) {
+    return true;
+  }
+
+  return false;
+}
+
+function rejectJson(response: Response, status: number, error: string, retryAfterSeconds?: number) {
+  if (retryAfterSeconds) {
+    response.setHeader('Retry-After', String(retryAfterSeconds));
+  }
+
+  response.status(status).json({ error });
+}
+
+function applyRateLimit(request: Request) {
+  const now = Date.now();
+  const key = getClientIp(request);
+  const recentHits = (rateLimitBuckets.get(key) ?? []).filter(
+    (timestamp) => now - timestamp < rateLimitWindowMs,
+  );
+
+  if (recentHits.length >= rateLimitMaxRequests) {
+    rateLimitBuckets.set(key, recentHits);
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((recentHits[0] + rateLimitWindowMs - now) / 1000),
+    );
+    return { allowed: false, retryAfterSeconds };
+  }
+
+  recentHits.push(now);
+  rateLimitBuckets.set(key, recentHits);
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
+function apiProtectionMiddleware(request: Request, response: Response, next: NextFunction) {
+  if (request.path === '/health') {
+    next();
+    return;
+  }
+
+  if (!isAllowedOriginRequest(request)) {
+    addRecentLog('error', 'server', 'Blocked API request with disallowed origin or referer.', {
+      path: request.path,
+      ip: getClientIp(request),
+      origin: request.header('origin') ?? null,
+      referer: request.header('referer') ?? null,
+    });
+    rejectJson(response, 403, 'Ask Arion blocked this request because the origin is not allowed.');
+    return;
+  }
+
+  const rateLimit = applyRateLimit(request);
+  if (!rateLimit.allowed) {
+    addRecentLog('error', 'server', 'Rate limit exceeded for API request.', {
+      path: request.path,
+      ip: getClientIp(request),
+      retryAfterSeconds: rateLimit.retryAfterSeconds,
+    });
+    rejectJson(
+      response,
+      429,
+      'Ask Arion is receiving too many requests from this connection. Please wait a moment and try again.',
+      rateLimit.retryAfterSeconds,
+    );
+    return;
+  }
+
+  next();
 }
 
 function recordPromptAudit(
@@ -234,5 +359,11 @@ app.get('/{*path}', (_request, response) => {
 app.listen(port, () => {
   addRecentLog('info', 'server', `Ask Arion server started on port ${port}.`);
   addRecentLog('info', 'server', `Prompt audit log path: ${getPromptAuditLogPath()}`);
+  addRecentLog('info', 'server', `Allowed origins: ${Array.from(allowedOrigins).join(', ')}`);
+  addRecentLog(
+    'info',
+    'server',
+    `Rate limit: ${rateLimitMaxRequests} requests per ${rateLimitWindowMs}ms per IP.`,
+  );
   console.log(`Ask Arion listening on http://0.0.0.0:${port}`);
 });
