@@ -551,6 +551,12 @@ textarea,
   flex-direction: column;
 }
 
+@media (prefers-color-scheme: dark) {
+  .privacy-modal {
+    background: #232448;
+  }
+}
+
 .privacy-modal__header {
   display: flex;
   align-items: flex-start;
