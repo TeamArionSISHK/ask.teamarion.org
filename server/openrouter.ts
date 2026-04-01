@@ -498,10 +498,7 @@ function resolveOpenRouterModels() {
 
 function shouldOmitReasoningOverride(model: string) {
   const normalized = model.trim().toLowerCase();
-  return (
-    normalized === 'qwen/qwen3.6-plus-preview:free' ||
-    normalized === 'qwen/qwen3.5-27b'
-  );
+  return normalized === 'qwen/qwen3.6-plus-preview:free';
 }
 
 function shouldRetryWithFallback(
