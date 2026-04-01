@@ -6,7 +6,7 @@ import { ChatMessageCard } from './components/ChatMessageCard';
 import { Composer } from './components/Composer';
 import { sendChatMessage } from './lib/api';
 import { suggestedPrompts } from './lib/suggestions';
-import type { ChatMessage } from './types/chat';
+import type { ChatHistoryMessage, ChatMessage } from './types/chat';
 
 const initialAssistantMessage: ChatMessage = {
   id: 'welcome',
@@ -133,6 +133,21 @@ function markChatActivity() {
   window.sessionStorage.setItem(CHAT_ACTIVITY_KEY, String(Date.now()));
 }
 
+function buildClientHistory(messages: ChatMessage[]): ChatHistoryMessage[] {
+  return messages
+    .filter(
+      (message) =>
+        message.id !== 'welcome' &&
+        (message.role === 'user' || message.role === 'assistant') &&
+        message.text.trim(),
+    )
+    .slice(-12)
+    .map((message) => ({
+      role: message.role,
+      text: message.text.trim(),
+    }));
+}
+
 export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>(loadStoredMessages);
   const [conversationId, setConversationId] = useState<string | null>(loadStoredConversationId);
@@ -203,10 +218,15 @@ export default function App() {
     }
   }, [conversationId]);
 
-  function buildRequestPayload(message: string, activeConversationId: string | null) {
+  function buildRequestPayload(
+    message: string,
+    activeConversationId: string | null,
+    sourceMessages: ChatMessage[],
+  ) {
     return {
       message,
       conversationId: activeConversationId ?? undefined,
+      history: buildClientHistory(sourceMessages),
     };
   }
 
@@ -244,7 +264,9 @@ export default function App() {
     const assistantMessageId = crypto.randomUUID();
 
     try {
-      const response = await sendChatMessage(buildRequestPayload(message, activeConversationId));
+      const response = await sendChatMessage(
+        buildRequestPayload(message, activeConversationId, messages),
+      );
       setConversationId(response.conversationId);
       markChatActivity();
       startTransition(() => {
@@ -257,7 +279,7 @@ export default function App() {
         };
 
         if (response.conversationReset && !sessionExpired) {
-          setMessages([initialAssistantMessage, userMessage, nextAssistantMessage]);
+          setMessages((current) => [...current, nextAssistantMessage]);
           return;
         }
 

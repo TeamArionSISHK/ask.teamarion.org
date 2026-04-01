@@ -233,6 +233,17 @@ function recordPromptAudit(
   });
 }
 
+function resolveConversationHistory(
+  conversation: { reset: boolean; recentMessages: Array<{ role: 'user' | 'assistant'; text: string }> },
+  clientHistory: Array<{ role: 'user' | 'assistant'; text: string }>,
+) {
+  if (conversation.reset && clientHistory.length) {
+    return clientHistory;
+  }
+
+  return conversation.recentMessages;
+}
+
 app.get('/api/health', (_request, response) => {
   response.json({ ok: true });
 });
@@ -272,11 +283,12 @@ app.post('/api/chat', async (request, response) => {
       mode: 'non-stream',
       conversationId: conversation.id,
       recentHistoryCount: conversation.recentMessages.length,
+      effectiveHistoryCount: resolveConversationHistory(conversation, parsed.data.history).length,
       summaryLength: conversation.summary.length,
       clientHistoryCount: parsed.data.history.length,
     });
     const payload = await askOpenRouter(parsed.data.message, {
-      history: conversation.recentMessages,
+      history: resolveConversationHistory(conversation, parsed.data.history),
       conversationSummary: conversation.summary,
     });
     appendConversationTurn(conversation.id, parsed.data.message, payload.text);
@@ -325,6 +337,7 @@ app.post('/api/chat/stream', async (request, response) => {
       mode: 'stream',
       conversationId: conversation.id,
       recentHistoryCount: conversation.recentMessages.length,
+      effectiveHistoryCount: resolveConversationHistory(conversation, parsed.data.history).length,
       summaryLength: conversation.summary.length,
       clientHistoryCount: parsed.data.history.length,
     });
@@ -332,7 +345,7 @@ app.post('/api/chat/stream', async (request, response) => {
     await streamOpenRouter(
       parsed.data.message,
       {
-        history: conversation.recentMessages,
+        history: resolveConversationHistory(conversation, parsed.data.history),
         conversationSummary: conversation.summary,
       },
       {

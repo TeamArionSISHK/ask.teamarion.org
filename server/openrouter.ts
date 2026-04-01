@@ -84,6 +84,7 @@ Rules for suggested_prompts:
 - Do not mention images, files, attachments, or hidden system details.
 - Do not place follow-up questions inside the text field.
 - Put follow-up questions only inside suggested_prompts.
+- Do not end the text with invitation lines such as "Would you like to know more about..." or "I can also tell you about...".
 - Use an empty array only if the conversation is clearly ending, the user is refusing to engage, or no sensible Team Arion follow-up exists.
 
 Knowledge:
@@ -127,6 +128,31 @@ function extractJsonObject(raw: string) {
   }
 
   return raw.slice(start, end + 1);
+}
+
+function splitStructuredTail(raw: string) {
+  if (!raw) {
+    return { prose: '', structured: '' };
+  }
+
+  if (raw.trimStart().startsWith('{')) {
+    return { prose: '', structured: raw.trim() };
+  }
+
+  const jsonLineMatch = raw.match(/\n\s*\{/);
+  if (!jsonLineMatch || jsonLineMatch.index === undefined) {
+    return { prose: raw.trim(), structured: '' };
+  }
+
+  const structuredStart = raw.indexOf('{', jsonLineMatch.index);
+  if (structuredStart === -1) {
+    return { prose: raw.trim(), structured: '' };
+  }
+
+  return {
+    prose: raw.slice(0, structuredStart).trim(),
+    structured: raw.slice(structuredStart).trim(),
+  };
 }
 
 function extractPartialTextFromJsonPrefix(raw: string) {
@@ -258,48 +284,119 @@ function extractTrailingSuggestedPrompts(text: string) {
   return { cleanedText: text.trim(), suggestedPrompts: [] as string[] };
 }
 
+function toQuestionPrompt(topic: string) {
+  const normalized = topic.replace(/\s+/g, ' ').trim().replace(/[.?!]+$/, '');
+  if (!normalized) {
+    return '';
+  }
+
+  const lower = normalized.toLowerCase();
+  if (lower.startsWith('your ') || lower.startsWith('the ') || lower.startsWith('team ')) {
+    return `Can you tell me more about ${normalized}?`;
+  }
+
+  return `Can you tell me more about ${normalized}?`;
+}
+
+function splitInvitationTopics(raw: string) {
+  return raw
+    .split(/\s*,\s*|\s+or\s+/i)
+    .map((part) => part.replace(/^about\s+/i, '').trim())
+    .filter(Boolean);
+}
+
+function extractInlineInvitationPrompts(text: string) {
+  const trimmed = text.trim();
+  const patterns = [
+    /(?:^|\n|\s)(Would you like to know more about\s+(.+?)\?)$/i,
+    /(?:^|\n|\s)(Would you like to hear more about\s+(.+?)\?)$/i,
+    /(?:^|\n|\s)(I can also tell you about\s+(.+?)\.)$/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = trimmed.match(pattern);
+    if (!match) {
+      continue;
+    }
+
+    const invitation = match[1].trim();
+    const topics = splitInvitationTopics(match[2] ?? '')
+      .map(toQuestionPrompt)
+      .filter(Boolean)
+      .slice(0, 3);
+
+    if (topics.length >= 2) {
+      return {
+        cleanedText: trimmed.slice(0, match.index).trim(),
+        suggestedPrompts: normalizeSuggestedPrompts(topics),
+        invitation,
+      };
+    }
+  }
+
+  return { cleanedText: trimmed, suggestedPrompts: [] as string[], invitation: '' };
+}
+
 function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
   const trimmed = raw.trim();
   if (!trimmed) {
     throw new Error('Model returned an empty response.');
   }
 
-  if (!trimmed.startsWith('{')) {
+  const finalizePlainText = (value: string): AssistantResponsePayload => {
+    const extracted = extractTrailingSuggestedPrompts(value);
+    if (extracted.suggestedPrompts.length) {
+      return {
+        text: extracted.cleanedText || value,
+        image_tags: [],
+        suggested_prompts: extracted.suggestedPrompts,
+      };
+    }
+
+    const inlineInvitation = extractInlineInvitationPrompts(value);
     return {
-      text: trimmed,
+      text: inlineInvitation.cleanedText || value,
       image_tags: [],
-      suggested_prompts: [],
+      suggested_prompts: inlineInvitation.suggestedPrompts,
     };
-  }
-
-  const parsedResponse = JSON.parse(extractJsonObject(trimmed)) as {
-    text?: unknown;
-    suggested_prompts?: unknown;
   };
-  const text =
-    typeof parsedResponse.text === 'string'
-      ? parsedResponse.text.trim()
-      : extractPartialTextFromJsonPrefix(trimmed);
 
-  if (!text) {
-    throw new Error('Model returned an empty response.');
+  const { prose, structured } = splitStructuredTail(trimmed);
+  if (structured) {
+    try {
+      const parsedResponse = JSON.parse(extractJsonObject(structured)) as {
+        text?: unknown;
+        suggested_prompts?: unknown;
+      };
+      const text =
+        typeof parsedResponse.text === 'string'
+          ? parsedResponse.text.trim()
+          : extractPartialTextFromJsonPrefix(structured);
+
+      const resolvedText = text || prose;
+      if (!resolvedText) {
+        throw new Error('Model returned an empty response.');
+      }
+
+      const normalizedPrompts = normalizeSuggestedPrompts(parsedResponse.suggested_prompts);
+      if (normalizedPrompts.length) {
+        const cleanedInline = extractInlineInvitationPrompts(resolvedText);
+        return {
+          text: cleanedInline.cleanedText || resolvedText,
+          image_tags: [],
+          suggested_prompts: normalizedPrompts,
+        };
+      }
+
+      return finalizePlainText(resolvedText);
+    } catch {
+      if (prose) {
+        return finalizePlainText(prose);
+      }
+    }
   }
 
-  const normalizedPrompts = normalizeSuggestedPrompts(parsedResponse.suggested_prompts);
-  if (normalizedPrompts.length) {
-    return {
-      text,
-      image_tags: [],
-      suggested_prompts: normalizedPrompts,
-    };
-  }
-
-  const extracted = extractTrailingSuggestedPrompts(text);
-  return {
-    text: extracted.cleanedText || text,
-    image_tags: [],
-    suggested_prompts: extracted.suggestedPrompts,
-  };
+  return finalizePlainText(trimmed);
 }
 
 function extractMessageText(
