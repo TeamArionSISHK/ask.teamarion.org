@@ -301,6 +301,39 @@ function extractTrailingSuggestedPrompts(text: string) {
   return { cleanedText: text.trim(), suggestedPrompts: [] as string[] };
 }
 
+function extractLabeledFollowUpPrompts(text: string) {
+  const trimmed = text.trim();
+  const match = trimmed.match(
+    /(?:^|\n|\s)(Suggested follow-ups?|Suggested prompts?|Suggested next prompts?|Next questions?)\s*:\s*([\s\S]+)$/i,
+  );
+
+  if (!match || match.index === undefined) {
+    return { cleanedText: trimmed, suggestedPrompts: [] as string[] };
+  }
+
+  const rawCandidates = match[2]
+    .split('\n')
+    .map((line) => cleanQuestionLine(line))
+    .filter(Boolean)
+    .slice(0, 6);
+
+  const prompts = normalizeSuggestedPrompts(
+    rawCandidates
+      .map((line) => (line.endsWith('?') ? line : toQuestionPrompt(line)))
+      .filter(Boolean)
+      .slice(0, 3),
+  );
+
+  if (prompts.length < 2) {
+    return { cleanedText: trimmed, suggestedPrompts: [] as string[] };
+  }
+
+  return {
+    cleanedText: trimmed.slice(0, match.index).trim(),
+    suggestedPrompts: prompts,
+  };
+}
+
 function toQuestionPrompt(topic: string) {
   const normalized = topic.replace(/\s+/g, ' ').trim().replace(/[.?!]+$/, '');
   if (!normalized) {
@@ -395,6 +428,16 @@ function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResp
   }
 
   const finalizePlainText = (value: string): AssistantResponsePayload => {
+    const labeledFollowUps = extractLabeledFollowUpPrompts(value);
+    if (labeledFollowUps.suggestedPrompts.length) {
+      return {
+        text: labeledFollowUps.cleanedText || value,
+        image_tags: [],
+        suggested_prompts: labeledFollowUps.suggestedPrompts,
+        official_actions: deriveOfficialActions(labeledFollowUps.cleanedText || value, userPrompt),
+      };
+    }
+
     const extracted = extractTrailingSuggestedPrompts(value);
     if (extracted.suggestedPrompts.length) {
       return {
