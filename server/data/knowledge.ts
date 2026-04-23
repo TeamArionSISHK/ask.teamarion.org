@@ -42,7 +42,7 @@ export const teamKnowledge: KnowledgeSection[] = [
       'The team has supported junior teams in school and contributed to wider STEM outreach in the community.',
       'The team positions itself as high-performance, structured, and intentional rather than a casual hobby project.',
       'The enterprise portfolio frames the project as Team Arion’s Hong Kong STEM Racing Professional Class campaign.',
-      'The stated ambition is to win Hong Kong STEM Racing Professional Class and qualify for the World Finals.',
+      'The team’s Professional Class campaign aimed to win Hong Kong STEM Racing Professional Class and qualify for the World Finals, and Team Arion now represents Hong Kong and SISHK at STEM Racing World Finals 2026.',
       'The project is also justified as a way to gain real engineering, project management, and teamwork experience while raising technical standards and representing Hong Kong with excellence.',
     ],
   },
@@ -71,6 +71,20 @@ export const teamKnowledge: KnowledgeSection[] = [
     ],
   },
   {
+    title: 'About STEM Racing competition',
+    details: [
+      'STEM Racing is a multidisciplinary engineering and business competition in which teams design, make, test, present, and race miniature CO2-powered cars.',
+      'A STEM Racing car races down a 20 metre straight-line track.',
+      'Race performance matters, but STEM Racing is not judged on speed alone.',
+      'Judging areas can include Enterprise, Design Engineering, Scrutineering, Verbal Presentation, Pit Display, and race performance.',
+      'Enterprise can include areas such as marketing, finance, and project management.',
+      'Design Engineering focuses on the technical quality of the car and the engineering decisions behind it.',
+      'Scrutineering focuses on technical legality, rule compliance, and whether the car meets competition requirements.',
+      'Verbal Presentation and Pit Display assess how clearly and professionally a team communicates its work, brand, process, and project story.',
+      'A strong plain-language explanation is: STEM Racing rewards teams that combine fast cars with strong engineering, clear communication, professional project execution, and rule-compliant design.',
+    ],
+  },
+  {
     title: 'Team expansion and Bauhinia Shift',
     details: [
       'Before joining Team Arion, Team Bauhinia Shift achieved 3rd Place Overall in Development Class.',
@@ -96,6 +110,7 @@ export const teamKnowledge: KnowledgeSection[] = [
       'The chatbot can describe these at a high level as key structural, aerodynamic, and race-critical systems of the car.',
       'A STEM Racing car body is made from the STEM Racing Model Block, a proprietary Denford material.',
       'The STEM Racing Model Block is a dense PU foam.',
+      'Other parts such as wings, wheels, supports, and guide components may use different manufacturing processes and materials depending on function, rules, and performance requirements.',
       'A STEM Racing car is typically powered by an 8 gram compressed CO2 cartridge inserted at the rear of the car.',
     ],
   },
@@ -225,6 +240,29 @@ export const teamKnowledge: KnowledgeSection[] = [
       'The team has also turned sponsor support into branded digital content, such as the Shapr3D hoodie campaign tied to Enterprise Plan support.',
       'DHL is not a Team Arion sponsor.',
       'The team used DHL GoGreen as a sustainability-aligned shipping service, but DHL did not sponsor the team.',
+    ],
+  },
+  {
+    title: 'About Ask Arion',
+    details: [
+      'Ask Arion is Team Arion’s AI-powered public information assistant.',
+      'Its purpose is to help people quickly learn about Team Arion, its car, engineering approach, outreach, achievements, sponsor-facing story, and official contact channels.',
+      'Ask Arion is designed to stay focused on Team Arion rather than act like a general-purpose chatbot.',
+      'Ask Arion uses a curated static knowledge base and should not invent facts beyond the loaded Team Arion knowledge.',
+      'Ask Arion can also surface contextually relevant official links such as the team website, school website, Instagram, LinkedIn, GitHub, and official email contacts when helpful.',
+      'If users ask what Ask Arion can do, a strong answer is: Ask Arion is best at giving a concise overview of Team Arion, its engineering philosophy, competition story, outreach, sponsor value, and official ways to learn more or get in touch.',
+      'If users ask about Ask Arion’s technical setup, the assistant may explain it plainly, but technical model and provider details should only be volunteered when the user specifically asks.',
+    ],
+  },
+  {
+    title: 'Ask Arion privacy and data handling',
+    details: [
+      'Ask Arion keeps a server-side prompt audit log for operational and safety purposes.',
+      'The prompt audit log may contain submitted prompts, timestamps, conversation IDs, IP-related request metadata, and basic browser header information.',
+      'Ask Arion uses recent conversation context to help maintain continuity within the same chat.',
+      'Browser-side local history may also help restore continuity after a refresh.',
+      'If users ask about privacy, the assistant should be clear that Ask Arion should be treated as an informational assistant and users should avoid submitting unnecessary sensitive personal information.',
+      'Ask Arion should not claim stronger privacy guarantees than the system actually provides.',
     ],
   },
   {
@@ -431,6 +469,8 @@ export const assistantRules = [
   'Do not provide the full list of original Team Arion members. If asked, say the original team membership was different and only confirm that Mark Yu and Nithit Chanpongsang were from the original team.',
   'If asked about confidential systems, say that some features are still under development for World Finals 2026 and cannot be shared publicly yet.',
   'If the answer is not fully supported by the supplied knowledge, say that more team-specific detail is not currently loaded and then provide the safest high-level answer you can.',
+  'Do not volunteer Ask Arion model or provider details unless the user specifically asks about the AI system, model, provider, or how Ask Arion works.',
+  'If the user specifically asks about Ask Arion’s AI model or provider, explain that Ask Arion uses OpenRouter and currently routes primarily through qwen/qwen3.5-27b with qwen/qwen3.6-plus-preview:free as fallback.',
   'Do not mention images, image tags, or visual attachments.',
   'Return JSON only when the caller expects JSON.',
 ];
