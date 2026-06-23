@@ -12,7 +12,7 @@ const defaultWelcomeText =
   'Hi, I’m Ask Arion. Ask me about our team, our car, or our engineering, and I’ll do my best to help.';
 
 const eventIntroText: Record<string, string> = {
-  SRWF26: 'Thanks for visiting our pit display at SRWF Singapore 2026.',
+  SRWF26: 'Thanks for visiting our pit display at SRWF Singapore 2026!',
 };
 
 const CHAT_STORAGE_KEY = 'ask-arion-chat-session-v1';
