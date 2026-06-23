@@ -8,17 +8,46 @@ import { sendChatMessage } from './lib/api';
 import { suggestedPrompts } from './lib/suggestions';
 import type { ChatHistoryMessage, ChatMessage } from './types/chat';
 
-const initialAssistantMessage: ChatMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  text:
-    'Hi, I’m Ask Arion. Ask me about our team, our car, or our engineering, and I’ll do my best to help.',
+const defaultWelcomeText =
+  'Hi, I’m Ask Arion. Ask me about our team, our car, or our engineering, and I’ll do my best to help.';
+
+const eventIntroText: Record<string, string> = {
+  SRWF26: 'Thanks for visiting our pit display at SRWF Singapore 2026.',
 };
 
 const CHAT_STORAGE_KEY = 'ask-arion-chat-session-v1';
 const CHAT_CONVERSATION_KEY = 'ask-arion-conversation-id-v1';
 const CHAT_ACTIVITY_KEY = 'ask-arion-chat-activity-v1';
+const CHAT_EVENT_KEY = 'ask-arion-chat-event-v1';
 const CHAT_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const DEFAULT_EVENT_STORAGE_VALUE = 'default';
+
+function getActiveEventCode() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const rawEvent = new URLSearchParams(window.location.search).get('event');
+  const normalizedEvent = rawEvent?.trim().toUpperCase() ?? '';
+
+  return Object.prototype.hasOwnProperty.call(eventIntroText, normalizedEvent)
+    ? normalizedEvent
+    : null;
+}
+
+function getEventStorageValue(eventCode: string | null) {
+  return eventCode ?? DEFAULT_EVENT_STORAGE_VALUE;
+}
+
+function buildInitialAssistantMessage(eventCode: string | null): ChatMessage {
+  const eventIntro = eventCode ? eventIntroText[eventCode] : null;
+
+  return {
+    id: 'welcome',
+    role: 'assistant',
+    text: eventIntro ? `${eventIntro}\n\n${defaultWelcomeText}` : defaultWelcomeText,
+  };
+}
 
 function isChatMessage(value: unknown): value is ChatMessage {
   if (!value || typeof value !== 'object') {
@@ -52,12 +81,32 @@ function isChatMessage(value: unknown): value is ChatMessage {
   );
 }
 
-function loadStoredMessages() {
+function syncStoredEvent(eventCode: string | null) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const activeEventValue = getEventStorageValue(eventCode);
+  const storedEventValue =
+    window.sessionStorage.getItem(CHAT_EVENT_KEY) ?? DEFAULT_EVENT_STORAGE_VALUE;
+
+  if (storedEventValue !== activeEventValue) {
+    clearStoredSession();
+  }
+
+  window.sessionStorage.setItem(CHAT_EVENT_KEY, activeEventValue);
+}
+
+function loadStoredMessages(eventCode: string | null) {
+  const initialAssistantMessage = buildInitialAssistantMessage(eventCode);
+
   if (typeof window === 'undefined') {
     return [initialAssistantMessage];
   }
 
   try {
+    syncStoredEvent(eventCode);
+
     const lastActivity = Number.parseInt(window.sessionStorage.getItem(CHAT_ACTIVITY_KEY) ?? '', 10);
     if (Number.isFinite(lastActivity) && Date.now() - lastActivity > CHAT_SESSION_TTL_MS) {
       window.sessionStorage.removeItem(CHAT_STORAGE_KEY);
@@ -99,12 +148,14 @@ function loadStoredMessages() {
   }
 }
 
-function loadStoredConversationId() {
+function loadStoredConversationId(eventCode: string | null) {
   if (typeof window === 'undefined') {
     return null;
   }
 
   try {
+    syncStoredEvent(eventCode);
+
     const lastActivity = Number.parseInt(window.sessionStorage.getItem(CHAT_ACTIVITY_KEY) ?? '', 10);
     if (Number.isFinite(lastActivity) && Date.now() - lastActivity > CHAT_SESSION_TTL_MS) {
       window.sessionStorage.removeItem(CHAT_CONVERSATION_KEY);
@@ -161,8 +212,12 @@ function buildClientHistory(messages: ChatMessage[]): ChatHistoryMessage[] {
 }
 
 export default function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>(loadStoredMessages);
-  const [conversationId, setConversationId] = useState<string | null>(loadStoredConversationId);
+  const [eventCode] = useState(getActiveEventCode);
+  const initialAssistantMessage = buildInitialAssistantMessage(eventCode);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadStoredMessages(eventCode));
+  const [conversationId, setConversationId] = useState<string | null>(() =>
+    loadStoredConversationId(eventCode),
+  );
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -208,11 +263,12 @@ export default function App() {
     }
 
     try {
+      window.sessionStorage.setItem(CHAT_EVENT_KEY, getEventStorageValue(eventCode));
       window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
     } catch {
       // Ignore storage failures and keep the chat usable.
     }
-  }, [messages]);
+  }, [eventCode, messages]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -250,6 +306,7 @@ export default function App() {
 
     const sessionExpired = isStoredSessionExpired();
     const activeConversationId = sessionExpired ? null : conversationId;
+    const requestSourceMessages = sessionExpired ? [initialAssistantMessage] : messages;
 
     if (sessionExpired) {
       clearStoredSession();
@@ -277,7 +334,7 @@ export default function App() {
 
     try {
       const response = await sendChatMessage(
-        buildRequestPayload(message, activeConversationId, messages),
+        buildRequestPayload(message, activeConversationId, requestSourceMessages),
       );
       setConversationId(response.conversationId);
       markChatActivity();
