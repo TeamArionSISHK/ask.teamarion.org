@@ -10,6 +10,7 @@ interface ConversationHistoryMessage {
 interface AskOpenRouterOptions {
   conversationSummary?: string;
   history?: ConversationHistoryMessage[];
+  includeSuggestedPrompts?: boolean;
 }
 
 interface AssistantResponsePayload {
@@ -81,18 +82,13 @@ function buildKnowledgeText() {
   return knowledge;
 }
 
-function buildSystemPrompt() {
+function buildSystemPrompt(includeSuggestedPrompts: boolean) {
   const knowledge = buildKnowledgeText();
-
-  return `${assistantRules.join('\n')}
-
-Return a strict JSON object with this shape:
-{
-  "text": "your answer as a string",
-  "suggested_prompts": ["short follow-up question", "short follow-up question"]
-}
-
-Rules for suggested_prompts:
+  const suggestedPromptsShape = includeSuggestedPrompts
+    ? '["short follow-up question", "short follow-up question"]'
+    : '[]';
+  const suggestedPromptInstructions = includeSuggestedPrompts
+    ? `Rules for suggested_prompts:
 - Return 2 or 3 suggestions on normal informative replies.
 - Keep them strictly focused on Team Arion.
 - Make them short, natural, and specific.
@@ -102,7 +98,22 @@ Rules for suggested_prompts:
 - Do not place follow-up questions inside the text field.
 - Put follow-up questions only inside suggested_prompts.
 - Do not end the text with invitation lines such as "Would you like to know more about..." or "I can also tell you about...".
-- Use an empty array only if the conversation is clearly ending, the user is refusing to engage, or no sensible Team Arion follow-up exists.
+- Use an empty array only if the conversation is clearly ending, the user is refusing to engage, or no sensible Team Arion follow-up exists.`
+    : `Rules for suggested_prompts:
+- Do not generate suggested prompts for this reply.
+- Return suggested_prompts as an empty array.
+- Do not place follow-up questions inside the text field.
+- Do not end the text with invitation lines such as "Would you like to know more about..." or "I can also tell you about...".`;
+
+  return `${assistantRules.join('\n')}
+
+Return a strict JSON object with this shape:
+{
+  "text": "your answer as a string",
+  "suggested_prompts": ${suggestedPromptsShape}
+}
+
+${suggestedPromptInstructions}
 
 Knowledge:
 ${knowledge}`;
@@ -638,7 +649,7 @@ async function readOpenRouterPayload(response: Response) {
 async function executeOpenRouterRequest(
   model: string,
   message: string,
-  { history = [], conversationSummary = '' }: AskOpenRouterOptions = {},
+  { history = [], conversationSummary = '', includeSuggestedPrompts = true }: AskOpenRouterOptions = {},
   stream = false,
 ) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -658,7 +669,7 @@ async function executeOpenRouterRequest(
       messages: [
         {
           role: 'system',
-          content: stream ? buildStreamingPrompt() : buildSystemPrompt(),
+          content: stream ? buildStreamingPrompt() : buildSystemPrompt(includeSuggestedPrompts),
         },
         ...(conversationSummary.trim()
           ? [
@@ -827,7 +838,15 @@ export async function askOpenRouter(
     );
   }
 
-  return normalizeAssistantResponse(rawContent, message);
+  const normalizedResponse = normalizeAssistantResponse(rawContent, message);
+  if (options.includeSuggestedPrompts === false) {
+    return {
+      ...normalizedResponse,
+      suggested_prompts: [],
+    };
+  }
+
+  return normalizedResponse;
 }
 
 export async function streamOpenRouter(

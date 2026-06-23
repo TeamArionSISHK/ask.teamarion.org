@@ -9,6 +9,7 @@ export interface ConversationContext {
   id: string;
   summary: string;
   recentMessages: ConversationMessage[];
+  turnCount: number;
   reset: boolean;
 }
 
@@ -16,6 +17,7 @@ interface StoredConversation {
   id: string;
   summary: string;
   recentMessages: ConversationMessage[];
+  turnCount: number;
   lastActiveAt: number;
 }
 
@@ -63,6 +65,7 @@ function createConversation(id?: string): StoredConversation {
     id: conversationId,
     summary: '',
     recentMessages: [],
+    turnCount: 0,
     lastActiveAt: Date.now(),
   };
 }
@@ -108,6 +111,7 @@ export function getConversationContext(conversationId?: string): ConversationCon
       id: existingConversation.id,
       summary: existingConversation.summary,
       recentMessages: [...existingConversation.recentMessages],
+      turnCount: existingConversation.turnCount,
       reset: false,
     };
   }
@@ -119,6 +123,7 @@ export function getConversationContext(conversationId?: string): ConversationCon
     id: conversation.id,
     summary: '',
     recentMessages: [],
+    turnCount: conversation.turnCount,
     reset: Boolean(conversationId),
   };
 }
@@ -130,6 +135,7 @@ export function appendConversationTurn(
 ) {
   const conversation = getExistingConversation(conversationId) ?? createConversation(conversationId);
   conversation.lastActiveAt = Date.now();
+  conversation.turnCount += 1;
   conversation.recentMessages.push(
     { role: 'user', text: userMessage.trim() },
     { role: 'assistant', text: assistantMessage.trim() },

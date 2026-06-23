@@ -278,6 +278,7 @@ app.post('/api/chat', async (request, response) => {
       conversationId: conversation.id,
       prompt: parsed.data.message,
     });
+    const includeSuggestedPrompts = conversation.turnCount < 3;
     addRecentLog('info', 'chat', 'Received chat request.', {
       messagePreview: parsed.data.message.slice(0, 140),
       mode: 'non-stream',
@@ -285,11 +286,14 @@ app.post('/api/chat', async (request, response) => {
       recentHistoryCount: conversation.recentMessages.length,
       effectiveHistoryCount: resolveConversationHistory(conversation, parsed.data.history).length,
       summaryLength: conversation.summary.length,
+      completedTurnCount: conversation.turnCount,
+      includeSuggestedPrompts,
       clientHistoryCount: parsed.data.history.length,
     });
     const payload = await askOpenRouter(parsed.data.message, {
       history: resolveConversationHistory(conversation, parsed.data.history),
       conversationSummary: conversation.summary,
+      includeSuggestedPrompts,
     });
     appendConversationTurn(conversation.id, parsed.data.message, payload.text);
     addRecentLog('info', 'chat', 'Completed chat request.', {
