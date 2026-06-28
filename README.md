@@ -39,10 +39,14 @@ OPENROUTER_FALLBACK_MODEL=qwen/qwen3.6-plus-preview:free
 OPENROUTER_SITE_URL=
 OPENROUTER_APP_NAME=Ask Arion
 PORT=3001
-ASK_ARION_ALLOWED_ORIGINS=https://ask.teamarion.org,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173
+ASK_ARION_ALLOWED_ORIGINS=https://teamarion.org,https://www.teamarion.org,https://ask.teamarion.org,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4179,http://127.0.0.1:4179
 ASK_ARION_RATE_LIMIT_WINDOW_MS=60000
 ASK_ARION_RATE_LIMIT_MAX_REQUESTS=24
+VITE_ASK_ARION_NEW_UI_URL=https://teamarion.org/ask
 ```
+
+Use `?ui=classic` on `ask.teamarion.org` to keep the original standalone UI.
+Default visits redirect to the integrated website Ask Arion experience.
 
 ## API Protection
 
