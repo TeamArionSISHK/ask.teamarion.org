@@ -13,6 +13,9 @@ export interface PromptAuditEntry {
   mode: 'non-stream' | 'stream';
   conversationId: string;
   prompt: string;
+  locale?: string;
+  eventCode?: string;
+  source?: string;
   ip: string;
   forwardedFor?: string;
   userAgent?: string;
@@ -33,6 +36,9 @@ function formatEntry(entry: PromptAuditEntry) {
     `Route: ${entry.route}`,
     `Mode: ${entry.mode}`,
     `Conversation ID: ${entry.conversationId}`,
+    `Locale: ${formatValue(entry.locale)}`,
+    `Event: ${formatValue(entry.eventCode)}`,
+    `Source: ${formatValue(entry.source)}`,
     `IP: ${formatValue(entry.ip)}`,
     `Forwarded For: ${formatValue(entry.forwardedFor)}`,
     `User Agent: ${formatValue(entry.userAgent)}`,

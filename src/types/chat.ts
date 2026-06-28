@@ -1,3 +1,6 @@
+export type LocaleCode = 'en' | 'zh-Hans' | 'zh-Hant';
+export type ChatSource = 'classic' | 'website-popup' | 'website-standalone';
+
 export interface ChatHistoryMessage {
   role: 'user' | 'assistant';
   text: string;
@@ -7,6 +10,9 @@ export interface ChatApiRequest {
   message: string;
   conversationId?: string;
   history?: ChatHistoryMessage[];
+  locale?: LocaleCode;
+  eventCode?: string | null;
+  source?: ChatSource;
 }
 
 export interface OfficialAction {

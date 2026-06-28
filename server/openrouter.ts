@@ -7,10 +7,15 @@ interface ConversationHistoryMessage {
   text: string;
 }
 
+type LocaleCode = 'en' | 'zh-Hans' | 'zh-Hant';
+
 interface AskOpenRouterOptions {
   conversationSummary?: string;
   history?: ConversationHistoryMessage[];
   includeSuggestedPrompts?: boolean;
+  locale?: LocaleCode;
+  eventCode?: string | null;
+  source?: string;
 }
 
 interface AssistantResponsePayload {
@@ -82,7 +87,31 @@ function buildKnowledgeText() {
   return knowledge;
 }
 
-function buildSystemPrompt(includeSuggestedPrompts: boolean) {
+function buildRuntimeInstruction({ locale = 'en', eventCode, source }: AskOpenRouterOptions = {}) {
+  const localeLine =
+    locale === 'zh-Hans'
+      ? 'Reply in Simplified Chinese unless the visitor clearly asks for another language.'
+      : locale === 'zh-Hant'
+        ? 'Reply in Traditional Chinese unless the visitor clearly asks for another language.'
+        : 'Reply in English unless the visitor clearly asks for another language.';
+  const contextLines = [
+    localeLine,
+    'Important representation fact: Team Arion represents Hong Kong only. The Hong Kong & Macau Regional Finals are a shared regional-finals context; Macau has its own team.',
+    'When referring to qualification, say Team Arion qualified as the Hong Kong representative for STEM Racing World Finals Singapore 2026.',
+  ];
+
+  if (eventCode === 'SRWF26') {
+    contextLines.push('The active event context is STEM Racing World Finals Singapore 2026. Keep answers useful for booth visitors.');
+  }
+
+  if (source) {
+    contextLines.push(`Request source: ${source}. Use this only to tune answer length and presentation.`);
+  }
+
+  return contextLines.join('\n');
+}
+
+function buildSystemPrompt(includeSuggestedPrompts: boolean, options: AskOpenRouterOptions = {}) {
   const knowledge = buildKnowledgeText();
   const suggestedPromptsShape = includeSuggestedPrompts
     ? '["short follow-up question", "short follow-up question"]'
@@ -107,6 +136,8 @@ function buildSystemPrompt(includeSuggestedPrompts: boolean) {
 
   return `${assistantRules.join('\n')}
 
+${buildRuntimeInstruction(options)}
+
 Return a strict JSON object with this shape:
 {
   "text": "your answer as a string",
@@ -129,7 +160,7 @@ function buildConversationSummaryPrompt(summary: string) {
   ].join('\n');
 }
 
-function buildStreamingPrompt() {
+function buildStreamingPrompt(options: AskOpenRouterOptions = {}) {
   return [
     'You are Ask Arion, a Team Arion assistant.',
     'Answer in plain text only, with no JSON or code fences.',
@@ -140,6 +171,7 @@ function buildStreamingPrompt() {
     'Do not engage in unrelated general chat. If the user drifts off-topic, gently bring the answer back to Team Arion.',
     'Use short paragraphs with blank lines between distinct ideas.',
     'Avoid dense walls of text.',
+    buildRuntimeInstruction(options),
     'Use only the supplied knowledge. Do not invent facts.',
     'If the answer is not fully supported by the supplied knowledge, say that more team-specific detail is not currently loaded and then provide the safest high-level answer you can.',
     '',
@@ -649,7 +681,14 @@ async function readOpenRouterPayload(response: Response) {
 async function executeOpenRouterRequest(
   model: string,
   message: string,
-  { history = [], conversationSummary = '', includeSuggestedPrompts = true }: AskOpenRouterOptions = {},
+  {
+    history = [],
+    conversationSummary = '',
+    includeSuggestedPrompts = true,
+    locale = 'en',
+    eventCode = null,
+    source,
+  }: AskOpenRouterOptions = {},
   stream = false,
 ) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -669,7 +708,9 @@ async function executeOpenRouterRequest(
       messages: [
         {
           role: 'system',
-          content: stream ? buildStreamingPrompt() : buildSystemPrompt(includeSuggestedPrompts),
+          content: stream
+            ? buildStreamingPrompt({ locale, eventCode, source })
+            : buildSystemPrompt(includeSuggestedPrompts, { locale, eventCode, source }),
         },
         ...(conversationSummary.trim()
           ? [

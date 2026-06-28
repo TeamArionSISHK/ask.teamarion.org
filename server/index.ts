@@ -14,11 +14,15 @@ const clientDistDir = path.resolve(rootDir, 'dist');
 const publicDir = path.resolve(rootDir, 'public');
 const port = Number.parseInt(process.env.PORT ?? '3001', 10);
 const defaultAllowedOrigins = [
+  'https://teamarion.org',
+  'https://www.teamarion.org',
   'https://ask.teamarion.org',
   `http://localhost:${port}`,
   `http://127.0.0.1:${port}`,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'http://localhost:4179',
+  'http://127.0.0.1:4179',
 ];
 const allowedOrigins = new Set(
   (process.env.ASK_ARION_ALLOWED_ORIGINS?.split(',') ?? defaultAllowedOrigins)
@@ -56,11 +60,15 @@ const requestSchema = z.object({
     .max(20)
     .optional()
     .default([]),
+  locale: z.enum(['en', 'zh-Hans', 'zh-Hant']).optional().default('en'),
+  eventCode: z.string().trim().max(40).nullable().optional(),
+  source: z.enum(['classic', 'website-popup', 'website-standalone']).optional().default('classic'),
 });
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use('/images', express.static(path.join(publicDir, 'images')));
+app.use('/api', corsMiddleware);
 app.use('/api', apiProtectionMiddleware);
 
 function getClientIp(request: Request) {
@@ -103,6 +111,40 @@ function extractOriginCandidate(value: string | undefined) {
   } catch {
     return null;
   }
+}
+
+function resolveAllowedCorsOrigin(request: Request) {
+  const origin = extractOriginCandidate(request.header('origin') ?? undefined);
+  return origin && allowedOrigins.has(origin) ? origin : null;
+}
+
+function applyCorsHeaders(request: Request, response: Response) {
+  const origin = resolveAllowedCorsOrigin(request);
+  if (!origin) {
+    return;
+  }
+
+  response.setHeader('Access-Control-Allow-Origin', origin);
+  response.setHeader('Vary', 'Origin');
+  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  response.setHeader('Access-Control-Max-Age', '86400');
+}
+
+function corsMiddleware(request: Request, response: Response, next: NextFunction) {
+  applyCorsHeaders(request, response);
+
+  if (request.method !== 'OPTIONS') {
+    next();
+    return;
+  }
+
+  if (resolveAllowedCorsOrigin(request) || !request.header('origin')) {
+    response.status(204).end();
+    return;
+  }
+
+  rejectJson(response, 403, 'Ask Arion blocked this request because the origin is not allowed.');
 }
 
 function looksLikeBrowserUserAgent(value: string | undefined) {
@@ -211,11 +253,17 @@ function recordPromptAudit(
     mode,
     conversationId,
     prompt,
+    locale,
+    eventCode,
+    source,
   }: {
     route: '/api/chat' | '/api/chat/stream';
     mode: 'non-stream' | 'stream';
     conversationId: string;
     prompt: string;
+    locale?: string;
+    eventCode?: string | null;
+    source?: string;
   },
 ) {
   void appendPromptAuditLog({
@@ -224,6 +272,9 @@ function recordPromptAudit(
     mode,
     conversationId,
     prompt,
+    locale,
+    eventCode: eventCode ?? undefined,
+    source,
     ip: getClientIp(request),
     forwardedFor: request.header('x-forwarded-for') ?? undefined,
     userAgent: request.header('user-agent') ?? undefined,
@@ -277,6 +328,9 @@ app.post('/api/chat', async (request, response) => {
       mode: 'non-stream',
       conversationId: conversation.id,
       prompt: parsed.data.message,
+      locale: parsed.data.locale,
+      eventCode: parsed.data.eventCode,
+      source: parsed.data.source,
     });
     const includeSuggestedPrompts = conversation.turnCount < 3;
     addRecentLog('info', 'chat', 'Received chat request.', {
@@ -294,6 +348,9 @@ app.post('/api/chat', async (request, response) => {
       history: resolveConversationHistory(conversation, parsed.data.history),
       conversationSummary: conversation.summary,
       includeSuggestedPrompts,
+      locale: parsed.data.locale,
+      eventCode: parsed.data.eventCode ?? null,
+      source: parsed.data.source,
     });
     appendConversationTurn(conversation.id, parsed.data.message, payload.text);
     addRecentLog('info', 'chat', 'Completed chat request.', {
@@ -335,6 +392,9 @@ app.post('/api/chat/stream', async (request, response) => {
       mode: 'stream',
       conversationId: conversation.id,
       prompt: parsed.data.message,
+      locale: parsed.data.locale,
+      eventCode: parsed.data.eventCode,
+      source: parsed.data.source,
     });
     addRecentLog('info', 'stream', 'Received streaming chat request.', {
       messagePreview: parsed.data.message.slice(0, 140),
@@ -351,6 +411,9 @@ app.post('/api/chat/stream', async (request, response) => {
       {
         history: resolveConversationHistory(conversation, parsed.data.history),
         conversationSummary: conversation.summary,
+        locale: parsed.data.locale,
+        eventCode: parsed.data.eventCode ?? null,
+        source: parsed.data.source,
       },
       {
       onDelta: (text) => {
