@@ -326,10 +326,11 @@ app.post('/api/chat/stream', async (request, response) => {
   response.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
   response.setHeader('Cache-Control', 'no-cache, no-transform');
   response.setHeader('Connection', 'keep-alive');
+  response.setHeader('X-Accel-Buffering', 'no');
+  response.flushHeaders();
 
   try {
     const conversation = getConversationContext(parsed.data.conversationId);
-    let lastSentText = '';
     recordPromptAudit(request, {
       route: '/api/chat/stream',
       mode: 'stream',
@@ -353,12 +354,10 @@ app.post('/api/chat/stream', async (request, response) => {
         conversationSummary: conversation.summary,
       },
       {
-      onDelta: (text) => {
-        const delta = text.slice(lastSentText.length);
+      onDelta: (delta) => {
         if (!delta) {
           return;
         }
-        lastSentText = text;
         response.write(`${JSON.stringify({ type: 'delta', delta })}\n`);
       },
       onDone: (payload) => {

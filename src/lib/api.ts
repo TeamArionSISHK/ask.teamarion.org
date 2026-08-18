@@ -136,22 +136,39 @@ type StreamEvent = StreamEventDelta | StreamEventDone | StreamEventError;
 interface StreamHandlers {
   onStart: () => void;
   onDelta: (delta: string) => void;
-  onDone: (payload: ChatApiResponse) => void;
-  onError: (message: string) => void;
 }
 
-export async function streamChatMessage(input: ChatApiRequest, handlers: StreamHandlers) {
+export async function streamChatMessage(
+  input: ChatApiRequest,
+  handlers: StreamHandlers,
+): Promise<ChatApiResponse> {
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof globalThis.setTimeout> | undefined;
   let response: Response;
 
+  function resetInactivityTimeout() {
+    if (timeoutId) {
+      globalThis.clearTimeout(timeoutId);
+    }
+
+    timeoutId = globalThis.setTimeout(() => controller.abort(), CHAT_REQUEST_TIMEOUT_MS);
+  }
+
   try {
+    resetInactivityTimeout();
     response = await fetch('/api/chat/stream', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(input),
+      signal: controller.signal,
     });
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('Ask Arion timed out after 40 seconds. Please try again.');
+    }
+
     if (error instanceof TypeError) {
       throw new Error(NETWORK_ERROR_MESSAGE);
     }
@@ -159,53 +176,87 @@ export async function streamChatMessage(input: ChatApiRequest, handlers: StreamH
     throw error;
   }
 
-  if (!response.ok || !response.body) {
+  if (!response.ok) {
     throw new Error(await readErrorMessage(response));
+  }
+
+  if (!response.body) {
+    throw new Error('Ask Arion returned an empty response stream. Please try again.');
   }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
   let started = false;
+  let completedPayload: ChatApiResponse | null = null;
 
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) {
-      break;
+  function handleEvent(event: StreamEvent) {
+    if (event.type === 'delta') {
+      if (!started) {
+        started = true;
+        handlers.onStart();
+      }
+      handlers.onDelta(event.delta);
+      return;
     }
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() ?? '';
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) {
-        continue;
-      }
-
-      const event = JSON.parse(trimmed) as StreamEvent;
-      if (event.type === 'delta') {
-        if (!started) {
-          started = true;
-          handlers.onStart();
-        }
-        handlers.onDelta(event.delta);
-      } else if (event.type === 'done') {
-        handlers.onDone(event.payload);
-      } else if (event.type === 'error') {
-        handlers.onError(event.error);
-      }
+    if (event.type === 'done') {
+      completedPayload = event.payload;
+      return;
     }
+
+    throw new Error(event.error);
   }
 
-  if (buffer.trim()) {
-    const event = JSON.parse(buffer.trim()) as StreamEvent;
-    if (event.type === 'done') {
-      handlers.onDone(event.payload);
-    } else if (event.type === 'error') {
-      handlers.onError(event.error);
+  try {
+    while (!completedPayload) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      resetInactivityTimeout();
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          continue;
+        }
+
+        handleEvent(JSON.parse(trimmed) as StreamEvent);
+        if (completedPayload) {
+          break;
+        }
+      }
     }
+
+    if (!completedPayload && buffer.trim()) {
+      handleEvent(JSON.parse(buffer.trim()) as StreamEvent);
+    }
+
+    if (!completedPayload) {
+      throw new Error('Ask Arion ended the response before it was complete. Please try again.');
+    }
+
+    return completedPayload;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error('Ask Arion timed out after 40 seconds. Please try again.');
+    }
+
+    if (error instanceof SyntaxError) {
+      throw new Error('Ask Arion returned an invalid response stream. Please try again.');
+    }
+
+    throw error;
+  } finally {
+    if (timeoutId) {
+      globalThis.clearTimeout(timeoutId);
+    }
+    await reader.cancel().catch(() => undefined);
   }
 }
 

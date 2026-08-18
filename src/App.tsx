@@ -1,10 +1,10 @@
-import { startTransition, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Header } from './components/Header';
 import { SuggestedPrompts } from './components/SuggestedPrompts';
 import { ChatMessageCard } from './components/ChatMessageCard';
 import { Composer } from './components/Composer';
-import { sendChatMessage } from './lib/api';
+import { streamChatMessage } from './lib/api';
 import { suggestedPrompts } from './lib/suggestions';
 import type { ChatHistoryMessage, ChatMessage } from './types/chat';
 
@@ -229,6 +229,7 @@ export default function App() {
     .reverse()
     .find((message) => message.role === 'assistant' && message.id !== 'welcome');
   const latestAssistantSuggestions = latestAssistantMessage?.suggestedPrompts ?? [];
+  const isStreamingResponse = messages.some((message) => message.status === 'streaming');
 
   useEffect(() => {
     const thread = threadRef.current;
@@ -238,9 +239,9 @@ export default function App() {
 
     thread.scrollTo({
       top: thread.scrollHeight,
-      behavior: messages.length > 2 ? 'smooth' : 'auto',
+      behavior: messages.length > 2 && !isStreamingResponse ? 'smooth' : 'auto',
     });
-  }, [loading, messages]);
+  }, [isStreamingResponse, loading, messages]);
 
   useEffect(() => {
     if (!privacyOpen) {
@@ -262,13 +263,17 @@ export default function App() {
       return;
     }
 
+    if (isStreamingResponse) {
+      return;
+    }
+
     try {
       window.sessionStorage.setItem(CHAT_EVENT_KEY, getEventStorageValue(eventCode));
       window.sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
     } catch {
       // Ignore storage failures and keep the chat usable.
     }
-  }, [eventCode, messages]);
+  }, [eventCode, isStreamingResponse, messages]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -320,25 +325,51 @@ export default function App() {
       text: message,
     };
 
-    startTransition(() => {
-      setMessages((current) =>
-        sessionExpired ? [initialAssistantMessage, userMessage] : [...current, userMessage],
-      );
-      setDraft('');
-      setError(null);
-    });
+    setMessages((current) =>
+      sessionExpired ? [initialAssistantMessage, userMessage] : [...current, userMessage],
+    );
+    setDraft('');
+    setError(null);
     markChatActivity();
     setLoading(true);
 
     const assistantMessageId = crypto.randomUUID();
+    let streamedText = '';
+    let streamStarted = false;
 
     try {
-      const response = await sendChatMessage(
+      const response = await streamChatMessage(
         buildRequestPayload(message, activeConversationId, requestSourceMessages),
+        {
+          onStart: () => {
+            streamStarted = true;
+            setMessages((current) => [
+              ...current,
+              {
+                id: assistantMessageId,
+                role: 'assistant',
+                text: '',
+                suggestedPrompts: [],
+                officialActions: [],
+                status: 'streaming',
+              },
+            ]);
+          },
+          onDelta: (delta) => {
+            streamedText += delta;
+            setMessages((current) =>
+              current.map((currentMessage) =>
+                currentMessage.id === assistantMessageId
+                  ? { ...currentMessage, text: streamedText }
+                  : currentMessage,
+              ),
+            );
+          },
+        },
       );
       setConversationId(response.conversationId);
       markChatActivity();
-      startTransition(() => {
+      setMessages((current) => {
         const nextAssistantMessage: ChatMessage = {
           id: assistantMessageId,
           role: 'assistant',
@@ -347,13 +378,15 @@ export default function App() {
           officialActions: response.official_actions ?? [],
           status: 'idle',
         };
+        const hasStreamingMessage = current.some(
+          (currentMessage) => currentMessage.id === assistantMessageId,
+        );
 
-        if (response.conversationReset && !sessionExpired) {
-          setMessages((current) => [...current, nextAssistantMessage]);
-          return;
-        }
-
-        setMessages((current) => [...current, nextAssistantMessage]);
+        return hasStreamingMessage
+          ? current.map((currentMessage) =>
+              currentMessage.id === assistantMessageId ? nextAssistantMessage : currentMessage,
+            )
+          : [...current, nextAssistantMessage];
       });
     } catch (caughtError) {
       const fallback =
@@ -361,18 +394,21 @@ export default function App() {
           ? caughtError.message
           : 'The assistant is unavailable right now.';
       setError(fallback);
-      startTransition(() => {
-        setMessages((current) => [
-          ...current,
-          {
-            id: assistantMessageId,
-            role: 'assistant',
-            text: fallback,
-            suggestedPrompts: [],
-            officialActions: [],
-            status: 'error',
-          },
-        ]);
+      setMessages((current) => {
+        const errorMessage: ChatMessage = {
+          id: assistantMessageId,
+          role: 'assistant',
+          text: fallback,
+          suggestedPrompts: [],
+          officialActions: [],
+          status: 'error',
+        };
+
+        return streamStarted
+          ? current.map((currentMessage) =>
+              currentMessage.id === assistantMessageId ? errorMessage : currentMessage,
+            )
+          : [...current, errorMessage];
       });
     } finally {
       setLoading(false);
@@ -415,7 +451,7 @@ export default function App() {
               </AnimatePresence>
             )}
 
-            {loading ? (
+            {loading && !isStreamingResponse ? (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -562,9 +598,36 @@ export default function App() {
                     operation:
                   </p>
                   <ul className="privacy-modal__list">
-                    <li>OpenRouter, Inc.</li>
-                    <li>Alibaba Cloud International</li>
-                    <li>DigitalOcean</li>
+                    <li>
+                      <a
+                        className="privacy-modal__link"
+                        href="https://openrouter.ai/"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        OpenRouter, Inc.
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="privacy-modal__link"
+                        href="https://openrouter.ai/deepseek"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        DeepSeek model provider page
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="privacy-modal__link"
+                        href="https://openrouter.ai/qwen"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        Qwen model provider page
+                      </a>
+                    </li>
                     <li>Cloudflare, Inc.</li>
                     <li>Microsoft Clarity</li>
                   </ul>

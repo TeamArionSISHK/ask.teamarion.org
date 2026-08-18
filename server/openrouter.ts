@@ -34,8 +34,8 @@ interface OpenRouterCompletionResponse {
 }
 
 const OPENROUTER_TIMEOUT_MS = 40_000;
-const DEFAULT_PRIMARY_MODEL = 'qwen/qwen3.5-27b';
-const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.6-plus-preview:free';
+const DEFAULT_PRIMARY_MODEL = 'deepseek/deepseek-v4-flash';
+const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.5-27b';
 
 const openRouterResponseSchema = z.object({
   choices: z
