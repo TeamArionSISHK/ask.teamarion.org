@@ -1,7 +1,33 @@
-import { Fragment, ReactNode } from 'react';
+import { Children, cloneElement, Fragment, isValidElement, type ReactNode } from 'react';
 
 interface RichTextMessageProps {
   text: string;
+  streaming?: boolean;
+}
+
+function appendStreamingCursor(block: ReactNode) {
+  const cursor = <span key="streaming-cursor" className="message-card__cursor" />;
+  if (!isValidElement<{ children?: ReactNode }>(block)) {
+    return block;
+  }
+
+  if (block.type === 'ul') {
+    const items = Children.toArray(block.props.children);
+    const lastItemIndex = items.length - 1;
+    const lastItem = items[lastItemIndex];
+
+    if (lastItemIndex >= 0 && isValidElement<{ children?: ReactNode }>(lastItem)) {
+      items[lastItemIndex] = cloneElement(
+        lastItem,
+        undefined,
+        lastItem.props.children,
+        cursor,
+      );
+      return cloneElement(block, undefined, items);
+    }
+  }
+
+  return cloneElement(block, undefined, block.props.children, cursor);
 }
 
 function renderInline(text: string) {
@@ -53,7 +79,7 @@ function renderInline(text: string) {
   return nodes;
 }
 
-export function RichTextMessage({ text }: RichTextMessageProps) {
+export function RichTextMessage({ text, streaming = false }: RichTextMessageProps) {
   const lines = text.split('\n');
   const blocks: ReactNode[] = [];
   let paragraphLines: string[] = [];
@@ -140,6 +166,11 @@ export function RichTextMessage({ text }: RichTextMessageProps) {
 
   flushParagraph();
   flushList();
+
+  if (streaming && blocks.length) {
+    const lastBlockIndex = blocks.length - 1;
+    blocks[lastBlockIndex] = appendStreamingCursor(blocks[lastBlockIndex]);
+  }
 
   return <Fragment>{blocks}</Fragment>;
 }

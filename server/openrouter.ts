@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { assistantRules, teamKnowledge, type KnowledgeSection } from './data/knowledge.js';
-import { deriveOfficialActions, type OfficialActionPayload } from './official-actions.js';
 
 interface ConversationHistoryMessage {
   role: 'user' | 'assistant';
@@ -10,14 +9,12 @@ interface ConversationHistoryMessage {
 interface AskOpenRouterOptions {
   conversationSummary?: string;
   history?: ConversationHistoryMessage[];
-  includeSuggestedPrompts?: boolean;
 }
 
 interface AssistantResponsePayload {
   text: string;
   image_tags: string[];
   suggested_prompts: string[];
-  official_actions: OfficialActionPayload[];
 }
 
 interface OpenRouterResolvedResponse {
@@ -36,6 +33,8 @@ interface OpenRouterCompletionResponse {
 const OPENROUTER_TIMEOUT_MS = 25_000;
 const DEFAULT_PRIMARY_MODEL = 'deepseek/deepseek-v4-flash';
 const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.5-27b';
+const STREAM_SUGGESTIONS_START = '<SUGGESTED_PROMPTS>';
+const STREAM_SUGGESTIONS_END = '</SUGGESTED_PROMPTS>';
 
 const openRouterResponseSchema = z.object({
   choices: z
@@ -82,13 +81,9 @@ function buildKnowledgeText() {
   return knowledge;
 }
 
-function buildSystemPrompt(includeSuggestedPrompts: boolean) {
+function buildSystemPrompt() {
   const knowledge = buildKnowledgeText();
-  const suggestedPromptsShape = includeSuggestedPrompts
-    ? '["short follow-up question", "short follow-up question"]'
-    : '[]';
-  const suggestedPromptInstructions = includeSuggestedPrompts
-    ? `Rules for suggested_prompts:
+  const suggestedPromptInstructions = `Rules for suggested_prompts:
 - Return 2 or 3 suggestions on normal informative replies.
 - Keep them strictly focused on Team Arion.
 - Make them short, natural, and specific.
@@ -98,19 +93,14 @@ function buildSystemPrompt(includeSuggestedPrompts: boolean) {
 - Do not place follow-up questions inside the text field.
 - Put follow-up questions only inside suggested_prompts.
 - Do not end the text with invitation lines such as "Would you like to know more about..." or "I can also tell you about...".
-- Use an empty array only if the conversation is clearly ending, the user is refusing to engage, or no sensible Team Arion follow-up exists.`
-    : `Rules for suggested_prompts:
-- Do not generate suggested prompts for this reply.
-- Return suggested_prompts as an empty array.
-- Do not place follow-up questions inside the text field.
-- Do not end the text with invitation lines such as "Would you like to know more about..." or "I can also tell you about...".`;
+- Use an empty array only if the conversation is clearly ending, the user is refusing to engage, or no sensible Team Arion follow-up exists.`;
 
   return `${assistantRules.join('\n')}
 
 Return a strict JSON object with this shape:
 {
   "text": "your answer as a string",
-  "suggested_prompts": ${suggestedPromptsShape}
+  "suggested_prompts": ["short follow-up question", "short follow-up question"]
 }
 
 ${suggestedPromptInstructions}
@@ -142,6 +132,14 @@ function buildStreamingPrompt() {
     'Avoid dense walls of text.',
     'Use only the supplied knowledge. Do not invent facts.',
     'If the answer is not fully supported by the supplied knowledge, say that more team-specific detail is not currently loaded and then provide the safest high-level answer you can.',
+    'After the answer, append exactly this private suggestion block:',
+    STREAM_SUGGESTIONS_START,
+    'Short Team Arion follow-up question?',
+    'Another short Team Arion follow-up question?',
+    STREAM_SUGGESTIONS_END,
+    'Return 2 or 3 short, natural, specific questions inside that block on every normal informative reply.',
+    'Do not mention or explain the suggestion block in the answer.',
+    'Do not put anything after the closing suggestion tag.',
     '',
     'Knowledge:',
     buildKnowledgeText(),
@@ -259,6 +257,48 @@ function normalizeSuggestedPrompts(value: unknown) {
   }
 
   return Array.from(unique);
+}
+
+function fallbackSuggestedPrompts(answer: string) {
+  const normalizedAnswer = answer.toLowerCase();
+
+  if (
+    normalizedAnswer.includes('team member') ||
+    normalizedAnswer.includes('mark yu') ||
+    normalizedAnswer.includes('marc lee')
+  ) {
+    return [
+      'Who are Team Arion’s current team members?',
+      'How does Team Arion work across engineering and enterprise?',
+      'What is the Purple Standard?',
+    ];
+  }
+
+  if (normalizedAnswer.includes('sponsor') || normalizedAnswer.includes('partnership')) {
+    return [
+      'How have sponsors supported Team Arion?',
+      'How is Team Arion preparing for World Finals 2026?',
+      'What impact has Team Arion made through outreach?',
+    ];
+  }
+
+  if (normalizedAnswer.includes('purpleexperience') || normalizedAnswer.includes('pit display')) {
+    return [
+      'What else can visitors see at Team Arion’s Pit Display?',
+      'When and where are World Finals 2026?',
+      'What makes Team Arion unique?',
+    ];
+  }
+
+  return [
+    'What makes Team Arion unique?',
+    'How is Team Arion preparing for World Finals 2026?',
+    'What is Team Arion’s engineering philosophy?',
+  ];
+}
+
+function ensureSuggestedPrompts(prompts: string[], answer: string) {
+  return normalizeSuggestedPrompts([...prompts, ...fallbackSuggestedPrompts(answer)]);
 }
 
 function cleanQuestionLine(value: string) {
@@ -432,7 +472,7 @@ function extractInvitationListPrompts(text: string) {
   };
 }
 
-function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResponsePayload {
+function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
   const trimmed = raw.trim();
   if (!trimmed) {
     throw new Error('Model returned an empty response.');
@@ -445,7 +485,6 @@ function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResp
         text: labeledFollowUps.cleanedText || value,
         image_tags: [],
         suggested_prompts: labeledFollowUps.suggestedPrompts,
-        official_actions: deriveOfficialActions(labeledFollowUps.cleanedText || value, userPrompt),
       };
     }
 
@@ -455,7 +494,6 @@ function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResp
         text: extracted.cleanedText || value,
         image_tags: [],
         suggested_prompts: extracted.suggestedPrompts,
-        official_actions: deriveOfficialActions(extracted.cleanedText || value, userPrompt),
       };
     }
 
@@ -465,7 +503,6 @@ function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResp
         text: inlineInvitation.cleanedText || value,
         image_tags: [],
         suggested_prompts: inlineInvitation.suggestedPrompts,
-        official_actions: deriveOfficialActions(inlineInvitation.cleanedText || value, userPrompt),
       };
     }
 
@@ -474,7 +511,6 @@ function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResp
       text: invitationList.cleanedText || value,
       image_tags: [],
       suggested_prompts: invitationList.suggestedPrompts,
-      official_actions: deriveOfficialActions(invitationList.cleanedText || value, userPrompt),
     };
   };
 
@@ -502,7 +538,6 @@ function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResp
           text: cleanedInline.cleanedText || resolvedText,
           image_tags: [],
           suggested_prompts: normalizedPrompts,
-          official_actions: deriveOfficialActions(cleanedInline.cleanedText || resolvedText, userPrompt),
         };
       }
 
@@ -515,6 +550,43 @@ function normalizeAssistantResponse(raw: string, userPrompt = ''): AssistantResp
   }
 
   return finalizePlainText(trimmed);
+}
+
+function normalizeStreamingResponse(raw: string): AssistantResponsePayload {
+  const startIndex = raw.toUpperCase().indexOf(STREAM_SUGGESTIONS_START);
+  if (startIndex === -1) {
+    const normalizedResponse = normalizeAssistantResponse(raw);
+    return {
+      ...normalizedResponse,
+      suggested_prompts: ensureSuggestedPrompts(
+        normalizedResponse.suggested_prompts,
+        normalizedResponse.text,
+      ),
+    };
+  }
+
+  const answer = raw.slice(0, startIndex).trim();
+  if (!answer) {
+    throw new Error('Model returned an empty response.');
+  }
+
+  const suggestionsStart = startIndex + STREAM_SUGGESTIONS_START.length;
+  const remaining = raw.slice(suggestionsStart);
+  const endIndex = remaining.toUpperCase().indexOf(STREAM_SUGGESTIONS_END);
+  const rawSuggestions = endIndex === -1 ? remaining : remaining.slice(0, endIndex);
+  const suggestedPrompts = normalizeSuggestedPrompts(
+    rawSuggestions
+      .split('\n')
+      .map((line) => cleanQuestionLine(line))
+      .filter(Boolean)
+      .map((line) => (line.endsWith('?') ? line : toQuestionPrompt(line))),
+  );
+
+  return {
+    text: answer,
+    image_tags: [],
+    suggested_prompts: ensureSuggestedPrompts(suggestedPrompts, answer),
+  };
 }
 
 function extractMessageText(
@@ -649,7 +721,7 @@ async function readOpenRouterPayload(response: Response) {
 async function executeOpenRouterRequest(
   model: string,
   message: string,
-  { history = [], conversationSummary = '', includeSuggestedPrompts = true }: AskOpenRouterOptions = {},
+  { history = [], conversationSummary = '' }: AskOpenRouterOptions = {},
   stream = false,
 ) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -669,7 +741,7 @@ async function executeOpenRouterRequest(
       messages: [
         {
           role: 'system',
-          content: stream ? buildStreamingPrompt() : buildSystemPrompt(includeSuggestedPrompts),
+          content: stream ? buildStreamingPrompt() : buildSystemPrompt(),
         },
         ...(conversationSummary.trim()
           ? [
@@ -838,15 +910,14 @@ export async function askOpenRouter(
     );
   }
 
-  const normalizedResponse = normalizeAssistantResponse(rawContent, message);
-  if (options.includeSuggestedPrompts === false) {
-    return {
-      ...normalizedResponse,
-      suggested_prompts: [],
-    };
-  }
-
-  return normalizedResponse;
+  const normalizedResponse = normalizeAssistantResponse(rawContent);
+  return {
+    ...normalizedResponse,
+    suggested_prompts: ensureSuggestedPrompts(
+      normalizedResponse.suggested_prompts,
+      normalizedResponse.text,
+    ),
+  };
 }
 
 export async function streamOpenRouter(
@@ -867,6 +938,33 @@ export async function streamOpenRouter(
   let buffer = '';
   let fullText = '';
   let sawContentDelta = false;
+  let emittedTextLength = 0;
+
+  function emitVisibleText(flush = false) {
+    const markerIndex = fullText.toUpperCase().indexOf(STREAM_SUGGESTIONS_START);
+    const safeEnd =
+      markerIndex >= 0
+        ? markerIndex
+        : flush
+          ? fullText.length
+          : Math.max(0, fullText.length - STREAM_SUGGESTIONS_START.length + 1);
+
+    if (safeEnd <= emittedTextLength) {
+      return;
+    }
+
+    handlers.onDelta(fullText.slice(emittedTextLength, safeEnd));
+    emittedTextLength = safeEnd;
+  }
+
+  function finishStream() {
+    if (!sawContentDelta || !fullText.trim()) {
+      throw new Error('Streaming was unavailable for this response.');
+    }
+
+    emitVisibleText(true);
+    handlers.onDone(normalizeStreamingResponse(fullText));
+  }
 
   while (true) {
     const { value, done } = await reader.read();
@@ -891,16 +989,7 @@ export async function streamOpenRouter(
 
         const data = line.slice(5).trim();
         if (data === '[DONE]') {
-          if (!sawContentDelta || !fullText.trim()) {
-            throw new Error('Streaming was unavailable for this response.');
-          }
-
-          handlers.onDone({
-            text: fullText.trim(),
-            image_tags: [],
-            suggested_prompts: [],
-            official_actions: [],
-          });
+          finishStream();
           return;
         }
 
@@ -912,19 +1001,10 @@ export async function streamOpenRouter(
 
         sawContentDelta = true;
         fullText += delta;
-        handlers.onDelta(delta);
+        emitVisibleText();
       }
     }
   }
 
-  if (!sawContentDelta || !fullText.trim()) {
-    throw new Error('Streaming was unavailable for this response.');
-  }
-
-  handlers.onDone({
-    text: fullText.trim(),
-    image_tags: [],
-    suggested_prompts: [],
-    official_actions: [],
-  });
+  finishStream();
 }

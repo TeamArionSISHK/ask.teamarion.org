@@ -59,18 +59,6 @@ function isChatMessage(value: unknown): value is ChatMessage {
     typeof candidate.id === 'string' &&
     (candidate.role === 'user' || candidate.role === 'assistant') &&
     typeof candidate.text === 'string' &&
-    (candidate.officialActions === undefined ||
-      (Array.isArray(candidate.officialActions) &&
-        candidate.officialActions.every(
-          (item) =>
-            item &&
-            typeof item === 'object' &&
-            typeof (item as { id?: unknown }).id === 'string' &&
-            typeof (item as { label?: unknown }).label === 'string' &&
-            typeof (item as { href?: unknown }).href === 'string' &&
-            (((item as { kind?: unknown }).kind === 'email') ||
-              (item as { kind?: unknown }).kind === 'external'),
-        ))) &&
     (candidate.suggestedPrompts === undefined ||
       (Array.isArray(candidate.suggestedPrompts) &&
         candidate.suggestedPrompts.every((item) => typeof item === 'string'))) &&
@@ -392,7 +380,6 @@ export default function App() {
                 role: 'assistant',
                 text: '',
                 suggestedPrompts: [],
-                officialActions: [],
                 status: 'streaming',
               },
             ]);
@@ -418,7 +405,6 @@ export default function App() {
           role: 'assistant',
           text: response.text,
           suggestedPrompts: response.suggested_prompts,
-          officialActions: response.official_actions ?? [],
           status: 'idle',
         };
         const hasStreamingMessage = current.some(

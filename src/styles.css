@@ -482,39 +482,6 @@ textarea,
   margin-top: 0.9rem;
 }
 
-.message-card__links {
-  margin-top: 0.95rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  color: var(--subtle);
-  font-size: 0.82rem;
-  line-height: 1.6;
-}
-
-.message-card__links-label {
-  color: var(--muted);
-  font-weight: 500;
-}
-
-.message-card__links-separator {
-  color: color-mix(in srgb, var(--subtle) 70%, transparent);
-}
-
-.message-card__inline-link {
-  color: color-mix(in srgb, var(--accent) 80%, var(--text));
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent) 44%, transparent);
-  text-underline-offset: 0.18em;
-  transition:
-    color var(--t-fast) var(--ease),
-    text-decoration-color var(--t-fast) var(--ease);
-}
-
-.message-card__inline-link:hover {
-  color: color-mix(in srgb, var(--accent) 92%, white);
-  text-decoration-color: color-mix(in srgb, var(--accent) 72%, transparent);
-}
-
 .message-card__cursor {
   display: inline-block;
   width: 0.55rem;
@@ -552,28 +519,6 @@ textarea,
 
 .typing-dot:nth-child(3) {
   animation-delay: 240ms;
-}
-
-@media (prefers-color-scheme: dark) {
-  .message-card__links {
-    border-top-color: rgba(255, 255, 255, 0.1);
-    color: rgba(223, 226, 248, 0.76);
-  }
-
-  .message-card__links-label,
-  .message-card__links-separator {
-    color: rgba(196, 201, 232, 0.64);
-  }
-
-  .message-card__inline-link {
-    color: rgba(186, 171, 255, 0.94);
-    text-decoration-color: rgba(186, 171, 255, 0.42);
-  }
-
-  .message-card__inline-link:hover {
-    color: #ffffff;
-    text-decoration-color: rgba(220, 212, 255, 0.8);
-  }
 }
 
 .chat-shell__composer {
