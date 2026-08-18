@@ -39,7 +39,7 @@ OPENROUTER_FALLBACK_MODEL=qwen/qwen3.5-27b
 OPENROUTER_SITE_URL=
 OPENROUTER_APP_NAME=Ask Arion
 PORT=3001
-ASK_ARION_ALLOWED_ORIGINS=https://ask.teamarion.org,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173
+ASK_ARION_ALLOWED_ORIGINS=https://ask.teamarion.org,https://teamarion.org,https://www.teamarion.org,http://localhost:3001,http://127.0.0.1:3001,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4179,http://127.0.0.1:4179
 ASK_ARION_RATE_LIMIT_WINDOW_MS=60000
 ASK_ARION_RATE_LIMIT_MAX_REQUESTS=24
 ```

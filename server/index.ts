@@ -15,10 +15,14 @@ const publicDir = path.resolve(rootDir, 'public');
 const port = Number.parseInt(process.env.PORT ?? '3001', 10);
 const defaultAllowedOrigins = [
   'https://ask.teamarion.org',
+  'https://teamarion.org',
+  'https://www.teamarion.org',
   `http://localhost:${port}`,
   `http://127.0.0.1:${port}`,
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  'http://localhost:4179',
+  'http://127.0.0.1:4179',
 ];
 const allowedOrigins = new Set(
   (process.env.ASK_ARION_ALLOWED_ORIGINS?.split(',') ?? defaultAllowedOrigins)
@@ -61,6 +65,7 @@ const requestSchema = z.object({
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use('/images', express.static(path.join(publicDir, 'images')));
+app.use('/api', corsMiddleware);
 app.use('/api', apiProtectionMiddleware);
 
 function getClientIp(request: Request) {
@@ -103,6 +108,40 @@ function extractOriginCandidate(value: string | undefined) {
   } catch {
     return null;
   }
+}
+
+function resolveAllowedCorsOrigin(request: Request) {
+  const origin = extractOriginCandidate(request.header('origin') ?? undefined);
+  return origin && allowedOrigins.has(origin) ? origin : null;
+}
+
+function applyCorsHeaders(request: Request, response: Response) {
+  const origin = resolveAllowedCorsOrigin(request);
+  if (!origin) {
+    return;
+  }
+
+  response.setHeader('Access-Control-Allow-Origin', origin);
+  response.setHeader('Vary', 'Origin');
+  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  response.setHeader('Access-Control-Max-Age', '86400');
+}
+
+function corsMiddleware(request: Request, response: Response, next: NextFunction) {
+  applyCorsHeaders(request, response);
+
+  if (request.method !== 'OPTIONS') {
+    next();
+    return;
+  }
+
+  if (resolveAllowedCorsOrigin(request) || !request.header('origin')) {
+    response.status(204).end();
+    return;
+  }
+
+  rejectJson(response, 403, 'Ask Arion blocked this request because the origin is not allowed.');
 }
 
 function looksLikeBrowserUserAgent(value: string | undefined) {
