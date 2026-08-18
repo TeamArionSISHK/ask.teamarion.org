@@ -199,6 +199,20 @@ function buildClientHistory(messages: ChatMessage[]): ChatHistoryMessage[] {
     }));
 }
 
+function clearSuggestedPrompts(messages: ChatMessage[]) {
+  let changed = false;
+  const nextMessages = messages.map((message) => {
+    if (!message.suggestedPrompts?.length) {
+      return message;
+    }
+
+    changed = true;
+    return { ...message, suggestedPrompts: [] };
+  });
+
+  return changed ? nextMessages : messages;
+}
+
 interface ChatFailure {
   detail: string;
   prompt: string;
@@ -350,11 +364,13 @@ export default function App() {
     };
 
     setMessages((current) => {
-      if (retryOptions) {
-        return [...retryOptions.sourceMessages, userMessage];
-      }
+      const sourceMessages = retryOptions
+        ? retryOptions.sourceMessages
+        : sessionExpired
+          ? [initialAssistantMessage]
+          : current;
 
-      return sessionExpired ? [initialAssistantMessage, userMessage] : [...current, userMessage];
+      return [...clearSuggestedPrompts(sourceMessages), userMessage];
     });
     setDraft('');
     setFailure(null);
@@ -390,6 +406,15 @@ export default function App() {
               current.map((currentMessage) =>
                 currentMessage.id === assistantMessageId
                   ? { ...currentMessage, text: streamedText }
+                  : currentMessage,
+              ),
+            );
+          },
+          onAnswerDone: () => {
+            setMessages((current) =>
+              current.map((currentMessage) =>
+                currentMessage.id === assistantMessageId
+                  ? { ...currentMessage, status: 'idle' }
                   : currentMessage,
               ),
             );
@@ -456,6 +481,15 @@ export default function App() {
     setConversationId(null);
     setDraft('');
     setFailure(null);
+  }
+
+  function handleDraftChange(value: string) {
+    setDraft(value);
+    if (!value.trim()) {
+      return;
+    }
+
+    setMessages((current) => clearSuggestedPrompts(current));
   }
 
   return (
@@ -525,12 +559,13 @@ export default function App() {
                 prompts={latestAssistantSuggestions}
                 disabled={loading}
                 onSelect={(prompt) => void submitMessage(prompt)}
+                scrollable
               />
             ) : null}
             <Composer
               value={draft}
               loading={loading}
-              onChange={setDraft}
+              onChange={handleDraftChange}
               onSubmit={() => void submitMessage()}
             />
             <p className="chat-shell__composer-note">

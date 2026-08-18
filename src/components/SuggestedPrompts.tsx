@@ -4,15 +4,17 @@ interface SuggestedPromptsProps {
   prompts: string[];
   disabled?: boolean;
   onSelect: (prompt: string) => void;
+  scrollable?: boolean;
 }
 
 export function SuggestedPrompts({
   prompts,
   disabled,
   onSelect,
+  scrollable = false,
 }: SuggestedPromptsProps) {
   return (
-    <div className="prompt-grid">
+    <div className={`prompt-grid ${scrollable ? 'prompt-grid--scroll' : ''}`}>
       {prompts.map((prompt, index) => (
         <motion.button
           key={prompt}

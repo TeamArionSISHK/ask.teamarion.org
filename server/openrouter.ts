@@ -30,9 +30,10 @@ interface OpenRouterCompletionResponse {
   contentType: string | null;
 }
 
-const OPENROUTER_TIMEOUT_MS = 25_000;
+const OPENROUTER_TIMEOUT_MS = 15_000;
 const DEFAULT_PRIMARY_MODEL = 'deepseek/deepseek-v4-flash';
 const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.5-27b';
+const DEFAULT_ROUTING_SESSION_ID = 'ask-arion-shared-knowledge';
 const STREAM_SUGGESTIONS_START = '<SUGGESTED_PROMPTS>';
 const STREAM_SUGGESTIONS_END = '</SUGGESTED_PROMPTS>';
 
@@ -735,9 +736,17 @@ async function executeOpenRouterRequest(
   try {
     const requestBody = {
       model,
+      session_id:
+        process.env.OPENROUTER_SESSION_ID?.trim() || DEFAULT_ROUTING_SESSION_ID,
       temperature: 0.2,
       max_tokens: 320,
       stream,
+      provider: {
+        sort: 'throughput',
+        preferred_max_latency: { p90: 4 },
+        preferred_min_throughput: { p90: 30 },
+        allow_fallbacks: true,
+      },
       messages: [
         {
           role: 'system',
@@ -925,6 +934,7 @@ export async function streamOpenRouter(
   options: AskOpenRouterOptions = {},
   handlers: {
     onDelta: (delta: string) => void;
+    onAnswerDone?: () => void;
     onDone: (payload: AssistantResponsePayload) => void;
   },
 ) {
@@ -939,6 +949,7 @@ export async function streamOpenRouter(
   let fullText = '';
   let sawContentDelta = false;
   let emittedTextLength = 0;
+  let answerDoneSignaled = false;
 
   function emitVisibleText(flush = false) {
     const markerIndex = fullText.toUpperCase().indexOf(STREAM_SUGGESTIONS_START);
@@ -949,12 +960,15 @@ export async function streamOpenRouter(
           ? fullText.length
           : Math.max(0, fullText.length - STREAM_SUGGESTIONS_START.length + 1);
 
-    if (safeEnd <= emittedTextLength) {
-      return;
+    if (safeEnd > emittedTextLength) {
+      handlers.onDelta(fullText.slice(emittedTextLength, safeEnd));
+      emittedTextLength = safeEnd;
     }
 
-    handlers.onDelta(fullText.slice(emittedTextLength, safeEnd));
-    emittedTextLength = safeEnd;
+    if (markerIndex >= 0 && !answerDoneSignaled) {
+      answerDoneSignaled = true;
+      handlers.onAnswerDone?.();
+    }
   }
 
   function finishStream() {
@@ -963,6 +977,10 @@ export async function streamOpenRouter(
     }
 
     emitVisibleText(true);
+    if (!answerDoneSignaled) {
+      answerDoneSignaled = true;
+      handlers.onAnswerDone?.();
+    }
     handlers.onDone(normalizeStreamingResponse(fullText));
   }
 

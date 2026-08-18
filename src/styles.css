@@ -352,6 +352,25 @@ textarea,
   margin: 0 0 10px;
 }
 
+.prompt-grid--scroll {
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prompt-grid--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.prompt-grid--scroll .prompt-card {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .prompt-card {
   display: inline-flex;
   align-items: center;

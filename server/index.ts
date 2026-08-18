@@ -418,6 +418,9 @@ app.post('/api/chat/stream', async (request, response) => {
         }
         response.write(`${JSON.stringify({ type: 'delta', delta })}\n`);
       },
+      onAnswerDone: () => {
+        response.write(`${JSON.stringify({ type: 'answer_done' })}\n`);
+      },
       onDone: (payload) => {
         appendConversationTurn(conversation.id, parsed.data.message, payload.text);
         addRecentLog('info', 'stream', 'Completed streaming chat request.', {

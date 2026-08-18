@@ -126,6 +126,10 @@ interface StreamEventStatus {
   message: string;
 }
 
+interface StreamEventAnswerDone {
+  type: 'answer_done';
+}
+
 interface StreamEventDone {
   type: 'done';
   payload: ChatApiResponse;
@@ -136,11 +140,17 @@ interface StreamEventError {
   error: string;
 }
 
-type StreamEvent = StreamEventStatus | StreamEventDelta | StreamEventDone | StreamEventError;
+type StreamEvent =
+  | StreamEventStatus
+  | StreamEventDelta
+  | StreamEventAnswerDone
+  | StreamEventDone
+  | StreamEventError;
 
 interface StreamHandlers {
   onStart: () => void;
   onDelta: (delta: string) => void;
+  onAnswerDone?: () => void;
   onStatus?: (message: string) => void;
 }
 
@@ -208,6 +218,11 @@ export async function streamChatMessage(
         handlers.onStart();
       }
       handlers.onDelta(event.delta);
+      return;
+    }
+
+    if (event.type === 'answer_done') {
+      handlers.onAnswerDone?.();
       return;
     }
 
