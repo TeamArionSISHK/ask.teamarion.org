@@ -211,6 +211,18 @@ function buildClientHistory(messages: ChatMessage[]): ChatHistoryMessage[] {
     }));
 }
 
+interface ChatFailure {
+  detail: string;
+  prompt: string;
+  conversationId: string | null;
+  sourceMessages: ChatMessage[];
+}
+
+interface SubmitOptions {
+  conversationId: string | null;
+  sourceMessages: ChatMessage[];
+}
+
 export default function App() {
   const [eventCode] = useState(getActiveEventCode);
   const initialAssistantMessage = buildInitialAssistantMessage(eventCode);
@@ -220,7 +232,8 @@ export default function App() {
   );
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState('Connecting to Ask Arion…');
+  const [failure, setFailure] = useState<ChatFailure | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const threadRef = useRef<HTMLDivElement | null>(null);
   const isEmptyState = messages.length === 1;
@@ -257,6 +270,21 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [privacyOpen]);
+
+  useEffect(() => {
+    if (!failure) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setFailure(null);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [failure]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -303,15 +331,23 @@ export default function App() {
     };
   }
 
-  async function submitMessage(rawMessage?: string) {
+  async function submitMessage(rawMessage?: string, retryOptions?: SubmitOptions) {
     const message = (rawMessage ?? draft).trim();
     if (!message || loading) {
       return;
     }
 
-    const sessionExpired = isStoredSessionExpired();
-    const activeConversationId = sessionExpired ? null : conversationId;
-    const requestSourceMessages = sessionExpired ? [initialAssistantMessage] : messages;
+    const sessionExpired = !retryOptions && isStoredSessionExpired();
+    const activeConversationId = retryOptions
+      ? retryOptions.conversationId
+      : sessionExpired
+        ? null
+        : conversationId;
+    const requestSourceMessages = retryOptions
+      ? retryOptions.sourceMessages
+      : sessionExpired
+        ? [initialAssistantMessage]
+        : messages;
 
     if (sessionExpired) {
       clearStoredSession();
@@ -325,11 +361,17 @@ export default function App() {
       text: message,
     };
 
-    setMessages((current) =>
-      sessionExpired ? [initialAssistantMessage, userMessage] : [...current, userMessage],
-    );
+    setMessages((current) => {
+      if (retryOptions) {
+        return [...retryOptions.sourceMessages, userMessage];
+      }
+
+      return sessionExpired ? [initialAssistantMessage, userMessage] : [...current, userMessage];
+    });
     setDraft('');
-    setError(null);
+    setFailure(null);
+    setPrivacyOpen(false);
+    setLoadingStatus('Connecting to Ask Arion…');
     markChatActivity();
     setLoading(true);
 
@@ -365,6 +407,7 @@ export default function App() {
               ),
             );
           },
+          onStatus: setLoadingStatus,
         },
       );
       setConversationId(response.conversationId);
@@ -393,26 +436,40 @@ export default function App() {
         caughtError instanceof Error
           ? caughtError.message
           : 'The assistant is unavailable right now.';
-      setError(fallback);
-      setMessages((current) => {
-        const errorMessage: ChatMessage = {
-          id: assistantMessageId,
-          role: 'assistant',
-          text: fallback,
-          suggestedPrompts: [],
-          officialActions: [],
-          status: 'error',
-        };
-
-        return streamStarted
-          ? current.map((currentMessage) =>
-              currentMessage.id === assistantMessageId ? errorMessage : currentMessage,
-            )
-          : [...current, errorMessage];
+      setFailure({
+        detail: fallback,
+        prompt: message,
+        conversationId: activeConversationId,
+        sourceMessages: requestSourceMessages,
       });
+      setMessages((current) =>
+        streamStarted
+          ? current.filter((currentMessage) => currentMessage.id !== assistantMessageId)
+          : current,
+      );
     } finally {
       setLoading(false);
     }
+  }
+
+  function retryLastPrompt() {
+    if (!failure || loading) {
+      return;
+    }
+
+    const retryOptions: SubmitOptions = {
+      conversationId: failure.conversationId,
+      sourceMessages: failure.sourceMessages,
+    };
+    void submitMessage(failure.prompt, retryOptions);
+  }
+
+  function startFresh() {
+    clearStoredSession();
+    setMessages([initialAssistantMessage]);
+    setConversationId(null);
+    setDraft('');
+    setFailure(null);
   }
 
   return (
@@ -463,7 +520,7 @@ export default function App() {
                     <span className="typing-dot" />
                     <span className="typing-dot" />
                     <span className="typing-dot" />
-                    <span className="typing-indicator__text">Thinking through that…</span>
+                    <span className="typing-indicator__text">{loadingStatus}</span>
                   </div>
                 </article>
               </motion.div>
@@ -482,7 +539,6 @@ export default function App() {
                 prompts={latestAssistantSuggestions}
                 disabled={loading}
                 onSelect={(prompt) => void submitMessage(prompt)}
-                tone="follow-up"
               />
             ) : null}
             <Composer
@@ -501,10 +557,71 @@ export default function App() {
                 Important Information
               </button>
             </p>
-            {error ? <div className="composer-error">{error}</div> : null}
           </div>
         </motion.section>
       </main>
+
+      <AnimatePresence>
+        {failure ? (
+          <motion.div
+            className="error-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="error-modal-title"
+              aria-describedby="error-modal-description"
+              className="error-modal"
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={{ duration: 0.18 }}
+            >
+              <button
+                type="button"
+                className="error-modal__close"
+                aria-label="Close error message"
+                onClick={() => setFailure(null)}
+              >
+                Close
+              </button>
+
+              <div className="error-modal__icon" aria-hidden="true">
+                !
+              </div>
+              <h2 id="error-modal-title" className="error-modal__title">
+                Sorry — Ask Arion got a little stuck.
+              </h2>
+              <p id="error-modal-description" className="error-modal__copy">
+                We couldn’t finish that answer. Your question is still safe to retry, or you can
+                start a fresh conversation.
+              </p>
+              <p className="error-modal__detail">{failure.detail}</p>
+
+              <div className="error-modal__actions">
+                <button
+                  type="button"
+                  className="error-modal__button error-modal__button--primary"
+                  onClick={retryLastPrompt}
+                  autoFocus
+                >
+                  Try that question again
+                </button>
+                <button
+                  type="button"
+                  className="error-modal__button error-modal__button--secondary"
+                  onClick={startFresh}
+                >
+                  Start fresh
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <AnimatePresence>
         {privacyOpen ? (

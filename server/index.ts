@@ -367,6 +367,28 @@ app.post('/api/chat/stream', async (request, response) => {
   response.setHeader('Connection', 'keep-alive');
   response.setHeader('X-Accel-Buffering', 'no');
   response.flushHeaders();
+  response.write(
+    `${JSON.stringify({ type: 'status', message: 'Connecting to Ask Arion…' })}\n`,
+  );
+
+  const heartbeatMessages = [
+    'Reviewing Team Arion’s information…',
+    'Still working on your answer…',
+  ];
+  let heartbeatIndex = 0;
+  const heartbeatId = globalThis.setInterval(() => {
+    if (response.writableEnded || response.destroyed) {
+      return;
+    }
+
+    response.write(
+      `${JSON.stringify({
+        type: 'status',
+        message: heartbeatMessages[heartbeatIndex % heartbeatMessages.length],
+      })}\n`,
+    );
+    heartbeatIndex += 1;
+  }, 10_000);
 
   try {
     const conversation = getConversationContext(parsed.data.conversationId);
@@ -428,6 +450,8 @@ app.post('/api/chat/stream', async (request, response) => {
       })}\n`,
     );
     response.end();
+  } finally {
+    globalThis.clearInterval(heartbeatId);
   }
 });
 

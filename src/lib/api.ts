@@ -1,6 +1,6 @@
 import type { ChatApiRequest, ChatApiResponse, RecentLogEntry } from '../types/chat';
 
-const CHAT_REQUEST_TIMEOUT_MS = 40_000;
+const CHAT_REQUEST_TIMEOUT_MS = 45_000;
 const NETWORK_ERROR_MESSAGE =
   'Ask Arion could not reach the server just now. Please try again in a moment.';
 
@@ -103,7 +103,7 @@ export async function sendChatMessage(input: ChatApiRequest): Promise<ChatApiRes
     return (await response.json()) as ChatApiResponse;
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('Ask Arion timed out after 40 seconds. Please try again.');
+      throw new Error('Ask Arion stopped responding before the answer was ready.');
     }
 
     if (error instanceof TypeError) {
@@ -121,6 +121,11 @@ interface StreamEventDelta {
   delta: string;
 }
 
+interface StreamEventStatus {
+  type: 'status';
+  message: string;
+}
+
 interface StreamEventDone {
   type: 'done';
   payload: ChatApiResponse;
@@ -131,11 +136,12 @@ interface StreamEventError {
   error: string;
 }
 
-type StreamEvent = StreamEventDelta | StreamEventDone | StreamEventError;
+type StreamEvent = StreamEventStatus | StreamEventDelta | StreamEventDone | StreamEventError;
 
 interface StreamHandlers {
   onStart: () => void;
   onDelta: (delta: string) => void;
+  onStatus?: (message: string) => void;
 }
 
 export async function streamChatMessage(
@@ -166,7 +172,7 @@ export async function streamChatMessage(
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('Ask Arion timed out after 40 seconds. Please try again.');
+      throw new Error('Ask Arion stopped responding before the answer was ready.');
     }
 
     if (error instanceof TypeError) {
@@ -191,6 +197,11 @@ export async function streamChatMessage(
   let completedPayload: ChatApiResponse | null = null;
 
   function handleEvent(event: StreamEvent) {
+    if (event.type === 'status') {
+      handlers.onStatus?.(event.message);
+      return;
+    }
+
     if (event.type === 'delta') {
       if (!started) {
         started = true;
@@ -244,7 +255,7 @@ export async function streamChatMessage(
     return completedPayload;
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('Ask Arion timed out after 40 seconds. Please try again.');
+      throw new Error('Ask Arion stopped responding before the answer was ready.');
     }
 
     if (error instanceof SyntaxError) {

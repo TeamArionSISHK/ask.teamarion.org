@@ -33,7 +33,7 @@ interface OpenRouterCompletionResponse {
   contentType: string | null;
 }
 
-const OPENROUTER_TIMEOUT_MS = 40_000;
+const OPENROUTER_TIMEOUT_MS = 25_000;
 const DEFAULT_PRIMARY_MODEL = 'deepseek/deepseek-v4-flash';
 const DEFAULT_FALLBACK_MODEL = 'qwen/qwen3.5-27b';
 
@@ -714,7 +714,7 @@ async function executeOpenRouterRequest(
     return response;
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error('OpenRouter timed out after 40 seconds.');
+      throw new Error('The model provider timed out before starting the response.');
     }
 
     throw error;

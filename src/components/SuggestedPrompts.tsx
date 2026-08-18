@@ -4,17 +4,15 @@ interface SuggestedPromptsProps {
   prompts: string[];
   disabled?: boolean;
   onSelect: (prompt: string) => void;
-  tone?: 'default' | 'follow-up';
 }
 
 export function SuggestedPrompts({
   prompts,
   disabled,
   onSelect,
-  tone = 'default',
 }: SuggestedPromptsProps) {
   return (
-    <div className={`prompt-grid ${tone === 'follow-up' ? 'prompt-grid--follow-up' : ''}`}>
+    <div className="prompt-grid">
       {prompts.map((prompt, index) => (
         <motion.button
           key={prompt}
@@ -24,7 +22,7 @@ export function SuggestedPrompts({
           transition={{ duration: 0.18, delay: index * 0.04 }}
           onClick={() => onSelect(prompt)}
           disabled={disabled}
-          className={`prompt-card ${tone === 'follow-up' ? 'prompt-card--follow-up' : ''}`}
+          className="prompt-card"
         >
           <span className="prompt-card__text">{prompt}</span>
         </motion.button>
