@@ -411,6 +411,7 @@ export default function App() {
             );
           },
           onAnswerDone: () => {
+            setLoadingStatus('');
             setMessages((current) =>
               current.map((currentMessage) =>
                 currentMessage.id === assistantMessageId
@@ -528,7 +529,7 @@ export default function App() {
               </AnimatePresence>
             )}
 
-            {loading && !isStreamingResponse ? (
+            {loading && !isStreamingResponse && loadingStatus ? (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}

@@ -204,11 +204,14 @@ export async function streamChatMessage(
   const decoder = new TextDecoder();
   let buffer = '';
   let started = false;
+  let answerFinished = false;
   let completedPayload: ChatApiResponse | null = null;
 
   function handleEvent(event: StreamEvent) {
     if (event.type === 'status') {
-      handlers.onStatus?.(event.message);
+      if (!answerFinished) {
+        handlers.onStatus?.(event.message);
+      }
       return;
     }
 
@@ -222,6 +225,7 @@ export async function streamChatMessage(
     }
 
     if (event.type === 'answer_done') {
+      answerFinished = true;
       handlers.onAnswerDone?.();
       return;
     }

@@ -355,6 +355,7 @@ textarea,
 .prompt-grid--scroll {
   min-width: 0;
   flex-wrap: nowrap;
+  margin: 0;
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-inline: contain;
@@ -364,6 +365,46 @@ textarea,
 
 .prompt-grid--scroll::-webkit-scrollbar {
   display: none;
+}
+
+.prompt-scroll-shell {
+  position: relative;
+  min-width: 0;
+  margin: 0 0 10px;
+}
+
+.prompt-scroll-shell::before,
+.prompt-scroll-shell::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  pointer-events: none;
+  opacity: 0;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: opacity var(--t-med) var(--ease);
+}
+
+.prompt-scroll-shell::before {
+  left: 0;
+  background: linear-gradient(to right, color-mix(in srgb, var(--bg) 66%, transparent), transparent);
+  mask-image: linear-gradient(to right, #000, transparent);
+  -webkit-mask-image: linear-gradient(to right, #000, transparent);
+}
+
+.prompt-scroll-shell::after {
+  right: 0;
+  background: linear-gradient(to left, color-mix(in srgb, var(--bg) 66%, transparent), transparent);
+  mask-image: linear-gradient(to left, #000, transparent);
+  -webkit-mask-image: linear-gradient(to left, #000, transparent);
+}
+
+.prompt-scroll-shell--left::before,
+.prompt-scroll-shell--right::after {
+  opacity: 1;
 }
 
 .prompt-grid--scroll .prompt-card {
@@ -1113,6 +1154,10 @@ textarea,
 
   .prompt-grid {
     gap: 6px;
+    margin-bottom: 7px;
+  }
+
+  .prompt-scroll-shell {
     margin-bottom: 7px;
   }
 
