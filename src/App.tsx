@@ -798,15 +798,8 @@ export default function App() {
                   <h3 className="privacy-modal__section-title">Contact</h3>
                   <p className="privacy-modal__copy">
                     For privacy or data-handling questions, please contact{' '}
-                    <a className="privacy-modal__link" href="mailto:privacy@teamarion.org">
-                      privacy@teamarion.org
-                    </a>
-                    .
-                  </p>
-                  <p className="privacy-modal__copy">
-                    For general Team Arion enquiries, please contact{' '}
-                    <a className="privacy-modal__link" href="mailto:info@teamarion.org">
-                      info@teamarion.org
+                    <a className="privacy-modal__link" href="mailto:askarion-privacy@mkyu.one">
+                      askarion-privacy@mkyu.one
                     </a>
                     .
                   </p>
