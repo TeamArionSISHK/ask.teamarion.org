@@ -858,14 +858,47 @@ textarea,
   }
 }
 
-.privacy-modal__list {
+.privacy-modal__processor-list {
+  list-style: none;
   margin: 8px 0 0;
-  padding-left: 1.2rem;
+  padding: 0;
   display: grid;
-  gap: 6px;
+  gap: 8px;
   font-size: 0.95rem;
-  line-height: 1.58;
   color: var(--text);
+}
+
+.privacy-modal__processor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
+}
+
+.privacy-modal__processor-name,
+.privacy-modal__processor-role {
+  display: block;
+}
+
+.privacy-modal__processor-name {
+  font-weight: 600;
+  line-height: 1.38;
+}
+
+.privacy-modal__processor-role {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.privacy-modal__processor-link {
+  white-space: nowrap;
+  font-size: 0.84rem;
 }
 
 .composer {
@@ -1120,8 +1153,13 @@ textarea,
 
   .privacy-modal__subtitle,
   .privacy-modal__copy,
-  .privacy-modal__list {
+  .privacy-modal__processor-list {
     font-size: 0.9rem;
+  }
+
+  .privacy-modal__processor {
+    grid-template-columns: 1fr;
+    gap: 7px;
   }
 
   .composer {

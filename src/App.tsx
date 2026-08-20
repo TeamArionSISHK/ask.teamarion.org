@@ -736,39 +736,77 @@ export default function App() {
                     Ask Arion currently relies on the following subprocessors for core service
                     operation:
                   </p>
-                  <ul className="privacy-modal__list">
-                    <li>
+                  <ul className="privacy-modal__processor-list">
+                    <li className="privacy-modal__processor">
+                      <div>
+                        <strong className="privacy-modal__processor-name">OpenRouter, Inc.</strong>
+                        <span className="privacy-modal__processor-role">
+                          AI gateway, request routing, and provider failover
+                        </span>
+                      </div>
+                    </li>
+                    <li className="privacy-modal__processor">
+                      <div>
+                        <strong className="privacy-modal__processor-name">
+                          Hangzhou DeepSeek Artificial Intelligence Co., Ltd.
+                        </strong>
+                        <span className="privacy-modal__processor-role">
+                          Primary AI model — DeepSeek V4 Flash
+                        </span>
+                      </div>
                       <a
-                        className="privacy-modal__link"
-                        href="https://openrouter.ai/"
+                        className="privacy-modal__link privacy-modal__processor-link"
+                        href="https://openrouter.ai/deepseek/deepseek-v4-flash/providers"
                         target="_blank"
                         rel="noreferrer noopener"
                       >
-                        OpenRouter, Inc.
+                        Provider details
                       </a>
                     </li>
-                    <li>
+                    <li className="privacy-modal__processor">
+                      <div>
+                        <strong className="privacy-modal__processor-name">
+                          Alibaba Cloud (Singapore) Private Limited
+                        </strong>
+                        <span className="privacy-modal__processor-role">
+                          Fallback AI model — Qwen3.5 27B
+                        </span>
+                      </div>
                       <a
-                        className="privacy-modal__link"
-                        href="https://openrouter.ai/deepseek"
+                        className="privacy-modal__link privacy-modal__processor-link"
+                        href="https://openrouter.ai/qwen/qwen3.5-27b/providers"
                         target="_blank"
                         rel="noreferrer noopener"
                       >
-                        DeepSeek model provider page
+                        Provider details
                       </a>
                     </li>
-                    <li>
-                      <a
-                        className="privacy-modal__link"
-                        href="https://openrouter.ai/qwen"
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      >
-                        Qwen model provider page
-                      </a>
+                    <li className="privacy-modal__processor">
+                      <div>
+                        <strong className="privacy-modal__processor-name">Cloudflare, Inc.</strong>
+                        <span className="privacy-modal__processor-role">
+                          Content delivery, security, and web analytics
+                        </span>
+                      </div>
                     </li>
-                    <li>Cloudflare, Inc.</li>
-                    <li>Microsoft Clarity</li>
+                    <li className="privacy-modal__processor">
+                      <div>
+                        <strong className="privacy-modal__processor-name">
+                          Microsoft Corporation
+                        </strong>
+                        <span className="privacy-modal__processor-role">
+                          Product analytics through Microsoft Clarity
+                        </span>
+                      </div>
+                    </li>
+                    <li className="privacy-modal__processor">
+                      <div>
+                        <strong className="privacy-modal__processor-name">DigitalOcean, LLC</strong>
+                        <span className="privacy-modal__processor-role">
+                          Virtual private server hosting and infrastructure
+                        </span>
+                      </div>
+                    </li>
                   </ul>
                 </section>
 
