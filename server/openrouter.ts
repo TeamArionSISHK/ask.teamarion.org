@@ -739,7 +739,7 @@ async function executeOpenRouterRequest(
       session_id:
         process.env.OPENROUTER_SESSION_ID?.trim() || DEFAULT_ROUTING_SESSION_ID,
       temperature: 0.2,
-      max_tokens: 320,
+      max_tokens: 500,
       stream,
       provider: {
         sort: 'throughput',
