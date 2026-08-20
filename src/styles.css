@@ -862,38 +862,31 @@ textarea,
   list-style: none;
   margin: 8px 0 0;
   padding: 0;
-  display: grid;
-  gap: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
   font-size: 0.95rem;
   color: var(--text);
 }
 
 .privacy-modal__processor {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 11px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  min-height: 42px;
+  padding: 9px 12px;
   background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
 }
 
-.privacy-modal__processor-name,
-.privacy-modal__processor-role {
-  display: block;
+.privacy-modal__processor + .privacy-modal__processor {
+  border-top: 1px solid var(--border);
 }
 
 .privacy-modal__processor-name {
-  font-weight: 600;
-  line-height: 1.38;
-}
-
-.privacy-modal__processor-role {
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.4;
+  min-width: 0;
+  font-weight: 500;
+  line-height: 1.42;
 }
 
 .privacy-modal__processor-link {
@@ -1158,8 +1151,8 @@ textarea,
   }
 
   .privacy-modal__processor {
-    grid-template-columns: 1fr;
-    gap: 7px;
+    align-items: flex-start;
+    min-height: 40px;
   }
 
   .composer {
