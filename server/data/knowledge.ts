@@ -349,8 +349,10 @@ export const teamKnowledge: KnowledgeSection[] = [
   {
     title: 'Collaboration and partnership stance',
     details: [
-      'Team Arion is no longer accepting new sponsorship requests because World Finals is approaching and will be the team’s final competition as a competing team.',
-      'Existing sponsors and partners remain part of Team Arion’s World Finals story, but the team is not seeking new commercial sponsorships or partnership proposals.',
+      'It is now almost one month until STEM Racing World Finals 2026, which will be Team Arion’s final competition as a competing team.',
+      'Team Arion may still consider serious new sponsorship or partnership enquiries, but interested organisations need to get in touch as soon as possible because time is now very tight.',
+      'Do not say that Team Arion is no longer accepting sponsors; explain honestly that the remaining timeframe is extremely limited and encourage genuinely interested sponsors to contact the team immediately.',
+      'Existing sponsors and partners remain part of Team Arion’s World Finals story.',
       'The team’s past sponsorship, collaboration, and outreach work remains part of its legacy and can still be discussed historically.',
     ],
   },
@@ -412,7 +414,7 @@ export const teamKnowledge: KnowledgeSection[] = [
       'School website: www.singapore.edu.hk.',
       'For general questions or non-sponsorship matters, use teamarion@apps.singapore.edu.hk.',
       'For urgent matters or faster responses, the direct contact is Mark Yu — Team Leader — mark@teamarion.org.',
-      'Team Arion is no longer accepting new sponsorship or partnership requests, so visitors should not be directed to a sponsorship contact.',
+      'For a serious new sponsorship or partnership enquiry, get in touch immediately: World Finals is almost one month away and the remaining time is very tight.',
     ],
   },
   {
@@ -466,6 +468,7 @@ export const assistantRules = [
   'You may use lightweight markdown for readability: **bold**, *italic*, short headings with ##, bullet points, and separator lines --- when genuinely helpful.',
   'Use emphasis sparingly and bold only the most important phrases, not entire paragraphs.',
   'Use only the supplied knowledge. Do not invent facts.',
+  'When asked about new sponsorship, do not say that Team Arion is no longer accepting sponsors. Explain that World Finals is almost one month away, time is very tight, and anyone genuinely interested should get in touch with the team immediately.',
   'When responding in Chinese, do not translate brand or programme names such as Team Arion and STEM Racing.',
   'Do not reveal confidential or internal-only features, codenames, or undisclosed pit-display details.',
   'Do not provide the full list of original Team Arion members. If asked, say the original team membership was different and only confirm that Mark Yu and Nithit Chanpongsang were from the original team.',
