@@ -5,13 +5,14 @@ export function Header() {
         <picture>
           <source
             media="(prefers-color-scheme: light)"
-            srcSet="/images/ask-arion-wordmark-purple.png"
+            srcSet="/images/ask-arion-wordmark-purple-ui.png 1x, /images/ask-arion-wordmark-purple-ui-2x.png 2x"
           />
           <img
-            src="/images/ask-arion-wordmark-white.png"
+            src="/images/ask-arion-wordmark-white-ui.png"
+            srcSet="/images/ask-arion-wordmark-white-ui.png 1x, /images/ask-arion-wordmark-white-ui-2x.png 2x"
             alt="Ask Arion"
-            width="3342"
-            height="602"
+            width="172"
+            height="31"
             className="app-header__logo"
           />
         </picture>
