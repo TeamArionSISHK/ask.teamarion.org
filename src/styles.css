@@ -5,6 +5,7 @@
   src: url("/fonts/ibm-plex-sans-400.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -12,6 +13,7 @@
   src: url("/fonts/ibm-plex-sans-500.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -19,6 +21,7 @@
   src: url("/fonts/ibm-plex-sans-600.ttf") format("truetype");
   font-weight: 600;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -26,6 +29,7 @@
   src: url("/fonts/ibm-plex-sans-700.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -33,6 +37,7 @@
   src: url("/fonts/ibm-plex-mono-400.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -40,6 +45,7 @@
   src: url("/fonts/ibm-plex-mono-500.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -47,6 +53,7 @@
   src: url("/fonts/ibm-plex-mono-600.ttf") format("truetype");
   font-weight: 600;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -54,6 +61,7 @@
   src: url("/fonts/ibm-plex-mono-700.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
 }
 
 :root {

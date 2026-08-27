@@ -389,26 +389,33 @@ export default function App() {
         {
           onStart: () => {
             streamStarted = true;
-            setMessages((current) => [
-              ...current,
-              {
-                id: assistantMessageId,
-                role: 'assistant',
-                text: '',
-                suggestedPrompts: [],
-                status: 'streaming',
-              },
-            ]);
           },
           onDelta: (delta) => {
             streamedText += delta;
-            setMessages((current) =>
-              current.map((currentMessage) =>
+            setMessages((current) => {
+              const hasStreamingMessage = current.some(
+                (currentMessage) => currentMessage.id === assistantMessageId,
+              );
+
+              if (!hasStreamingMessage) {
+                return [
+                  ...current,
+                  {
+                    id: assistantMessageId,
+                    role: 'assistant',
+                    text: streamedText,
+                    suggestedPrompts: [],
+                    status: 'streaming',
+                  },
+                ];
+              }
+
+              return current.map((currentMessage) =>
                 currentMessage.id === assistantMessageId
                   ? { ...currentMessage, text: streamedText }
                   : currentMessage,
-              ),
-            );
+              );
+            });
           },
           onAnswerDone: () => {
             setLoadingStatus('');

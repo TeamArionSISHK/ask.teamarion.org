@@ -10,6 +10,8 @@ export function Header() {
           <img
             src="/images/ask-arion-wordmark-white.png"
             alt="Ask Arion"
+            width="3342"
+            height="602"
             className="app-header__logo"
           />
         </picture>

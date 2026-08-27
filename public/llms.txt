@@ -1,0 +1,7 @@
+# Ask Arion
+
+Ask Arion is Team Arion's public AI-powered information assistant. It answers questions about the team, its engineering, competition journey, outreach, and World Finals 2026 using a curated knowledge base.
+
+- [Use Ask Arion](https://ask.teamarion.org/)
+- [Visit Team Arion](https://teamarion.org/)
+
