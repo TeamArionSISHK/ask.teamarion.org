@@ -85,10 +85,12 @@ function buildKnowledgeText() {
 function buildSystemPrompt() {
   const knowledge = buildKnowledgeText();
   const suggestedPromptInstructions = `Rules for suggested_prompts:
-- Return 2 or 3 suggestions on normal informative replies.
+- Return exactly 3 suggestions on normal informative replies.
 - Keep them strictly focused on Team Arion.
 - Make them short, natural, and specific.
 - Each suggestion must be a question the visitor could tap next.
+- Write every suggestion in the same language as the visitor's latest message.
+- Phrase each suggestion independently and naturally. Do not force them through a shared sentence template.
 - Do not suggest unrelated chat.
 - Do not mention images, files, attachments, or hidden system details.
 - Do not place follow-up questions inside the text field.
@@ -101,7 +103,7 @@ function buildSystemPrompt() {
 Return a strict JSON object with this shape:
 {
   "text": "your answer as a string",
-  "suggested_prompts": ["short follow-up question", "short follow-up question"]
+  "suggested_prompts": ["first natural follow-up question", "second natural follow-up question", "third natural follow-up question"]
 }
 
 ${suggestedPromptInstructions}
@@ -135,10 +137,13 @@ function buildStreamingPrompt() {
     'If the answer is not fully supported by the supplied knowledge, say that more team-specific detail is not currently loaded and then provide the safest high-level answer you can.',
     'After the answer, append exactly this private suggestion block:',
     STREAM_SUGGESTIONS_START,
-    'Short Team Arion follow-up question?',
-    'Another short Team Arion follow-up question?',
+    '[first generated question]',
+    '[second generated question]',
+    '[third generated question]',
     STREAM_SUGGESTIONS_END,
-    'Return 2 or 3 short, natural, specific questions inside that block on every normal informative reply.',
+    'Replace the bracketed placeholders with exactly 3 short, natural, specific questions on every normal informative reply.',
+    "Write all 3 questions in the same language as the visitor's latest message.",
+    'Phrase each question independently and naturally. Do not reuse a fixed opening such as "Can you tell me more about".',
     'Do not mention or explain the suggestion block in the answer.',
     'Do not put anything after the closing suggestion tag.',
     '',
@@ -260,48 +265,6 @@ function normalizeSuggestedPrompts(value: unknown) {
   return Array.from(unique);
 }
 
-function fallbackSuggestedPrompts(answer: string) {
-  const normalizedAnswer = answer.toLowerCase();
-
-  if (
-    normalizedAnswer.includes('team member') ||
-    normalizedAnswer.includes('mark yu') ||
-    normalizedAnswer.includes('marc lee')
-  ) {
-    return [
-      'Who are Team Arion’s current team members?',
-      'How does Team Arion work across engineering and enterprise?',
-      'What is the Purple Standard?',
-    ];
-  }
-
-  if (normalizedAnswer.includes('sponsor') || normalizedAnswer.includes('partnership')) {
-    return [
-      'How have sponsors supported Team Arion?',
-      'How is Team Arion preparing for World Finals 2026?',
-      'What impact has Team Arion made through outreach?',
-    ];
-  }
-
-  if (normalizedAnswer.includes('purpleexperience') || normalizedAnswer.includes('pit display')) {
-    return [
-      'What else can visitors see at Team Arion’s Pit Display?',
-      'When and where are World Finals 2026?',
-      'What makes Team Arion unique?',
-    ];
-  }
-
-  return [
-    'What makes Team Arion unique?',
-    'How is Team Arion preparing for World Finals 2026?',
-    'What is Team Arion’s engineering philosophy?',
-  ];
-}
-
-function ensureSuggestedPrompts(prompts: string[], answer: string) {
-  return normalizeSuggestedPrompts([...prompts, ...fallbackSuggestedPrompts(answer)]);
-}
-
 function cleanQuestionLine(value: string) {
   return value
     .replace(/^[-*•\d.)\s]+/, '')
@@ -371,7 +334,6 @@ function extractLabeledFollowUpPrompts(text: string) {
 
   const prompts = normalizeSuggestedPrompts(
     rawCandidates
-      .map((line) => (line.endsWith('?') ? line : toQuestionPrompt(line)))
       .filter(Boolean)
       .slice(0, 3),
   );
@@ -383,93 +345,6 @@ function extractLabeledFollowUpPrompts(text: string) {
   return {
     cleanedText: trimmed.slice(0, match.index).trim(),
     suggestedPrompts: prompts,
-  };
-}
-
-function toQuestionPrompt(topic: string) {
-  const normalized = topic.replace(/\s+/g, ' ').trim().replace(/[.?!]+$/, '');
-  if (!normalized) {
-    return '';
-  }
-
-  const lower = normalized.toLowerCase();
-  if (lower.startsWith('your ') || lower.startsWith('the ') || lower.startsWith('team ')) {
-    return `Can you tell me more about ${normalized}?`;
-  }
-
-  return `Can you tell me more about ${normalized}?`;
-}
-
-function splitInvitationTopics(raw: string) {
-  return raw
-    .split(/\s*,\s*|\s+or\s+/i)
-    .map((part) => part.replace(/^about\s+/i, '').trim())
-    .filter(Boolean);
-}
-
-function extractInlineInvitationPrompts(text: string) {
-  const trimmed = text.trim();
-  const patterns = [
-    /(?:^|\n|\s)(Would you like to know more about\s+(.+?)\?)$/i,
-    /(?:^|\n|\s)(Would you like to hear more about\s+(.+?)\?)$/i,
-    /(?:^|\n|\s)(I can also tell you about\s+(.+?)\.)$/i,
-  ];
-
-  for (const pattern of patterns) {
-    const match = trimmed.match(pattern);
-    if (!match) {
-      continue;
-    }
-
-    const invitation = match[1].trim();
-    const topics = splitInvitationTopics(match[2] ?? '')
-      .map(toQuestionPrompt)
-      .filter(Boolean)
-      .slice(0, 3);
-
-    if (topics.length >= 2) {
-      return {
-        cleanedText: trimmed.slice(0, match.index).trim(),
-        suggestedPrompts: normalizeSuggestedPrompts(topics),
-        invitation,
-      };
-    }
-  }
-
-  return { cleanedText: trimmed, suggestedPrompts: [] as string[], invitation: '' };
-}
-
-function extractInvitationListPrompts(text: string) {
-  const trimmed = text.trim();
-  const match = trimmed.match(
-    /(?:^|\n|\s)(Would you like to know more about|Would you like to hear more about|I can also tell you about):\s*([\s\S]+)$/i,
-  );
-
-  if (!match || match.index === undefined) {
-    return { cleanedText: trimmed, suggestedPrompts: [] as string[], invitation: '' };
-  }
-
-  const rawList = match[2]
-    .split('\n')
-    .map((line) => cleanQuestionLine(line))
-    .filter(Boolean)
-    .slice(0, 5);
-
-  const prompts = normalizeSuggestedPrompts(
-    rawList
-      .map((line) => (line.endsWith('?') ? line : toQuestionPrompt(line)))
-      .filter(Boolean)
-      .slice(0, 3),
-  );
-
-  if (prompts.length < 2) {
-    return { cleanedText: trimmed, suggestedPrompts: [] as string[], invitation: '' };
-  }
-
-  return {
-    cleanedText: trimmed.slice(0, match.index).trim(),
-    suggestedPrompts: prompts,
-    invitation: match[1].trim(),
   };
 }
 
@@ -498,20 +373,10 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
       };
     }
 
-    const inlineInvitation = extractInlineInvitationPrompts(value);
-    if (inlineInvitation.suggestedPrompts.length) {
-      return {
-        text: inlineInvitation.cleanedText || value,
-        image_tags: [],
-        suggested_prompts: inlineInvitation.suggestedPrompts,
-      };
-    }
-
-    const invitationList = extractInvitationListPrompts(value);
     return {
-      text: invitationList.cleanedText || value,
+      text: value,
       image_tags: [],
-      suggested_prompts: invitationList.suggestedPrompts,
+      suggested_prompts: [],
     };
   };
 
@@ -534,9 +399,8 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
 
       const normalizedPrompts = normalizeSuggestedPrompts(parsedResponse.suggested_prompts);
       if (normalizedPrompts.length) {
-        const cleanedInline = extractInlineInvitationPrompts(resolvedText);
         return {
-          text: cleanedInline.cleanedText || resolvedText,
+          text: resolvedText,
           image_tags: [],
           suggested_prompts: normalizedPrompts,
         };
@@ -556,14 +420,7 @@ function normalizeAssistantResponse(raw: string): AssistantResponsePayload {
 function normalizeStreamingResponse(raw: string): AssistantResponsePayload {
   const startIndex = raw.toUpperCase().indexOf(STREAM_SUGGESTIONS_START);
   if (startIndex === -1) {
-    const normalizedResponse = normalizeAssistantResponse(raw);
-    return {
-      ...normalizedResponse,
-      suggested_prompts: ensureSuggestedPrompts(
-        normalizedResponse.suggested_prompts,
-        normalizedResponse.text,
-      ),
-    };
+    return normalizeAssistantResponse(raw);
   }
 
   const answer = raw.slice(0, startIndex).trim();
@@ -579,14 +436,13 @@ function normalizeStreamingResponse(raw: string): AssistantResponsePayload {
     rawSuggestions
       .split('\n')
       .map((line) => cleanQuestionLine(line))
-      .filter(Boolean)
-      .map((line) => (line.endsWith('?') ? line : toQuestionPrompt(line))),
+      .filter(Boolean),
   );
 
   return {
     text: answer,
     image_tags: [],
-    suggested_prompts: ensureSuggestedPrompts(suggestedPrompts, answer),
+    suggested_prompts: suggestedPrompts,
   };
 }
 
@@ -920,13 +776,7 @@ export async function askOpenRouter(
   }
 
   const normalizedResponse = normalizeAssistantResponse(rawContent);
-  return {
-    ...normalizedResponse,
-    suggested_prompts: ensureSuggestedPrompts(
-      normalizedResponse.suggested_prompts,
-      normalizedResponse.text,
-    ),
-  };
+  return normalizedResponse;
 }
 
 export async function streamOpenRouter(
