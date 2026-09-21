@@ -124,17 +124,8 @@ function buildConversationSummaryPrompt(summary: string) {
 
 function buildStreamingPrompt() {
   return [
-    'You are Ask Arion, a Team Arion assistant.',
+    ...assistantRules.filter((rule) => rule !== 'Return JSON only when the caller expects JSON.'),
     'Answer in plain text only, with no JSON or code fences.',
-    'Answer in 2 to 5 sentences.',
-    'Be concise, calm, helpful, and warm.',
-    'You may be lightly playful if the user is clearly joking, but keep it brief and tasteful.',
-    'Keep the conversation focused on Team Arion, its people, cars, engineering, outreach, competitions, sponsors, or related project details.',
-    'Do not engage in unrelated general chat. If the user drifts off-topic, gently bring the answer back to Team Arion.',
-    'Use short paragraphs with blank lines between distinct ideas.',
-    'Avoid dense walls of text.',
-    'Use only the supplied knowledge. Do not invent facts.',
-    'If the answer is not fully supported by the supplied knowledge, say that more team-specific detail is not currently loaded and then provide the safest high-level answer you can.',
     'After the answer, append exactly this private suggestion block:',
     STREAM_SUGGESTIONS_START,
     '[first generated question]',
