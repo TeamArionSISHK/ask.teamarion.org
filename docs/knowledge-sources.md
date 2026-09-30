@@ -1,6 +1,6 @@
 # Ask Arion knowledge sources
 
-Updated 21 September 2026. This file is an editorial reference, not part of the
+Updated 30 September 2026. This file is an editorial reference, not part of the
 model prompt. `server/data/knowledge.ts` remains the curated runtime knowledge.
 
 ## Sources
@@ -26,6 +26,46 @@ model prompt. `server/data/knowledge.ts` remains the curated runtime knowledge.
 
 Page numbers above include each PDF cover. The source PDFs remain outside this
 repository; full extracts are not sent to the model.
+
+## 30 September 2026 dictation update
+
+- Source: Mark’s attached `Pasted markdown(6).md`, supplied with instructions to
+  add pit-display reasoning and correct the knowledge. A separate pit tour is
+  explicitly deferred; no tour, wayfinding, event prompts or UI changes are
+  included in this update.
+- Normalised obvious speech-to-text substitutions (Team Arion, STEM Racing,
+  pit display, car viewer and “Imagined with [name]”) without treating uncertain
+  phrases as new facts. The raw dictation is not copied into runtime knowledge.
+- Added the Gemini experiment that inspired Studio Ultraviolet, visitor
+  authorship/personalisation rationale, affordability as a qualitative decision,
+  interface iteration, moderation rationale and the quiz-to-Voices decision.
+- The interface work is qualitative testing with friends, including comparisons
+  between iterations. Apple’s Human Interface Guidelines were consulted; eye
+  tracking was considered but not conducted. Preserve the portfolio’s existing
+  participant account without inventing a combined sample size.
+- Safety layers describe Mark’s design account, not a fresh implementation audit.
+  Omit tentative image-model identification, named moderation deployment claims,
+  exact runtime sequencing and unverified per-image costs. No claims of
+  statistically proven UX improvements or perfect moderation were added.
+- Preserve March 2025 as the submitted profile’s founding date. The dictation’s
+  “April last year” competition-entry recollection does not establish a revised
+  founding date. Its “first and last” wording refers to World Finals, not the
+  team’s first STEM Racing competition.
+- Frame PurpleExperience as the integrated pit experience, with Studio
+  Ultraviolet, Explore Our Car and Voices of Tomorrow as its core digital
+  experiences. Ask Arion predates its WF integration and complements them.
+- Reconcile earlier recruitment/continuity ambitions with the final competition.
+  Voices publication remains a plan for suitable approved entries, not a promise
+  to publish every submission.
+- Keep the portfolio’s reuse/avoided-purchase figures attributed to its documented
+  configuration. The final monitor arrangement is unconfirmed; the 29 September
+  display discussions in the supplied conversation context show that it was
+  still being resolved. No replacement setup or revised percentage is inferred.
+- Keep competitor comparisons as the team’s intended differentiation, not claims
+  of global uniqueness or unsupported descriptions of other teams.
+- Add explicit distinctions between intent and outcomes, creative postcards and
+  engineering evidence, and static knowledge and live pit status. Existing
+  privacy, funding and original-roster restrictions remain in force.
 
 ## Editorial decisions
 
