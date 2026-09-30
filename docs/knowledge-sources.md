@@ -67,6 +67,34 @@ repository; full extracts are not sent to the model.
   engineering evidence, and static knowledge and live pit status. Existing
   privacy, funding and original-roster restrictions remain in force.
 
+## Authorised behind-the-scenes additions
+
+- Mark explicitly authorised using his previous project conversations and
+  complaints in addition to the portfolios on 30 September. Only project facts
+  and practical decisions were selected; existing private-finance and roster
+  restrictions remain in force.
+- Manufacturing: Mark’s 22 September account confirms that the final outstanding
+  parts arrived on 21 September after delays/rework, and that some dimensional
+  defects were accepted under time pressure while missing functional geometry
+  required remanufacture. Attribute this to his account of the order. Do not
+  turn acceptance into proof of conformity, a technical diagnosis, successful
+  revalidation or an official scrutineering outcome. Reconcile the portfolio’s
+  inspection observations with these separate reported defects.
+- Printing: the 29 September account supersedes the 15 September plan. The
+  intended operating pair became Mark’s CP1500 and a borrowed school CP1500;
+  the recovered CP1300 was primarily a donor/emergency option. Omit donor
+  identity, personal ownership arrangements after the event and cosmetic
+  criticisms of borrowed equipment.
+- Mark’s 26 September printer discussion supports adapting to hardware/status
+  limitations; it does not prove a USB fix. Earlier local-network/cellular
+  contingency planning is a plan, not a guaranteed live configuration.
+- The simple uniforms, paint and waterslide decals come from Mark’s earlier
+  conversation reproduced in the supplied context. Do not backfill a fictional
+  performance or intentional design rationale.
+- Mark’s current task context establishes the late decision to avoid adding
+  complexity to PurpleExperience. No new feature promises, live logistics,
+  teammate criticism, refund negotiation or competitor disparagement is added.
+
 ## Editorial decisions
 
 - The user's current instruction authorises public descriptions and rationale
