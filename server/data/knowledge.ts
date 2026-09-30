@@ -271,8 +271,8 @@ export const teamKnowledge: KnowledgeSection[] = [
   {
     title: 'Long-term vision',
     details: [
-      'Team Arion aims to build a sustainable team pipeline, a stronger student ecosystem, and a long-term brand legacy.',
-      'The long-term vision goes beyond one competition cycle and focuses on continuity, recruitment, systems, and institutional growth.',
+      'Team Arion’s earlier long-term vision aimed to build a student pipeline and lasting STEM impact; distinguish those ambitions from confirmed future activity.',
+      'Recruitment and continued team operations were earlier ambitions. World Finals 2026 is the current team’s final competition; do not promise another competition season or continued recruitment. Its intended legacy includes outreach, published tools, documentation and sharing lessons with future teams.',
     ],
   },
   {
@@ -311,12 +311,24 @@ export const teamKnowledge: KnowledgeSection[] = [
       'Simulation tools: ANSYS Discovery for concept feedback, Fluent for final CFD, OpenFOAM for front-wing comparisons and Autodesk Nastran for structures. Final CFD used a 19 m/s inlet, rotating wheels, static ground, steady incompressible flow, SST verification and about 8.5 million cells; simulated outcomes are not race measurements.',
       'Reported wheel FEA radial displacement improved from 0.212 to 0.120 mm (about 43%). A separate front-support load case reported 6.545 MPa peak stress, 0.249 mm deformation and minimum safety factor 7.03. Keep these values tied to their specific simulations.',
       'FDM PLA halo prototypes were tested under a 2 kg vertical load; 10% honeycomb gave about 0.8 mm deformation. The final halo switched to MJF because the car was significantly underweight. Do not call the final halo PLA.',
-      'Front-wing minimum design thickness was 0.9 mm; reported manufactured thickness after smoothing was 0.92–0.93 mm. Inspections reported critical dimensions within 0.1–0.2 mm of CAD and no perceptible wheel wobble.',
+      'Front-wing minimum design thickness was 0.9 mm; reported manufactured thickness after smoothing was 0.92–0.93 mm. The portfolio reports inspected critical dimensions within 0.1–0.2 mm of CAD and no perceptible wheel wobble. These specific checks do not establish conformity of every delivered part; Mark separately reported out-of-tolerance parts and manufacturing defects.',
       'Final wheels use F1 Bearings hybrid stainless-steel/ceramic bearings run dry, seated perpendicularly using controlled clamp insertion. Portfolio free-spin results average 35–38 seconds, best 40–42 seconds, with smooth deceleration and no notable binding/vibration.',
       'Straight rolling tests found no directional drift; downward/minor lateral support tests showed no visible permanent deformation. A Fun-Tech-Lab tabletop wind tunnel gave qualitative airflow observations consistent with CFD. Extreme lateral-load testing was not performed.',
       'The September 11–12 engineering log also records a rear wheel-support root failure after repeated track testing, with an observed 11-run history. The team inspected failed/spare parts and considered repair and further testing; do not imply testing was failure-free or that repairs were conclusively validated.',
       'Time constraints led to direct sanding/painting of the foam body without epoxy/foam putty, leaving some texture. Finishing used Mr Hobby paint with primer, base, accents and clear coat; 3M Scotch-Weld DP8010 joints were oriented for shear, cured and inspected.',
       'Vendor capability, tolerances and manufacturing consistency constrained design. These are portfolio-reported observations, not guarantees of perfect precision, fatigue life or future race results.',
+    ],
+  },
+  {
+    title: 'Behind the scenes: practical constraints and adaptation',
+    details: [
+      "Mark reports that World Finals manufacturing involved repeated delivery delays, rework and parts with dimensional or finishing problems. The final outstanding parts arrived on 21 September 2026. This is the team’s account of that order, not a general judgement about a supplier’s work.",
+      "Some out-of-tolerance parts were accepted under schedule pressure, while missing required geometry led to requests for remanufacture. Receipt or acceptance of parts did not establish that every defect was resolved, every part met its drawing, or the assembled car had passed scrutineering.",
+      "Mark recovered an unwanted Canon SELPHY CP1300 without a power supply and used it during preparation. By 29 September, the plan was to use his CP1500 and a borrowed school CP1500, with the older CP1300 mainly as an accessory/parts donor or emergency option. This supersedes the earlier CP1500-plus-CP1300 operating plan; it is preparation history, not verified live printer availability.",
+      "The printing work included driver, connection and printer-status limitations. Mark chose to design around hardware constraints rather than assume that a newer printer would remove every integration problem; do not claim an unverified fix or seamless failover.",
+      "Network preparation included a local pit network and cellular fallback planning because the digital experiences needed a usable connection at the venue. These were contingency arrangements, not proof of uninterrupted internet, a guaranteed connection speed or automatic failover.",
+      "Mark described the uniforms as straightforward purple garments with team branding, and the car’s appearance as purple/blue paint with sponsor waterslide decals. These carry the team identity, but there is no documented special performance benefit or elaborate design rationale for their simplicity.",
+      "Late in preparation, Mark described PurpleExperience as nearly complete and already complex, and wanted to avoid adding more features. The remaining knowledge work focuses on explaining the existing project clearly; do not imply a new feature roadmap or promise future integrations.",
     ],
   },
   {
@@ -332,19 +344,50 @@ export const teamKnowledge: KnowledgeSection[] = [
   {
     title: 'PurpleExperience',
     details: [
-      'PurpleExperience is Team Arion’s interactive touchscreen experience for its World Finals 2026 pit, developed by Mark Yu around Create. Explore. Contribute. It invites guests into the team’s story through engineering exploration, personal creativity and community participation; these public details are no longer confidential.',
+      'PurpleExperience is Team Arion’s integrated World Finals 2026 pit experience, with its digital experiences developed by Mark Yu around Create. Explore. Contribute. Its three core digital experiences are Studio Ultraviolet, Explore Our Car and Voices of Tomorrow. Ask Arion existed independently before its World Finals pit integration and complements these three experiences; it does not replace Explore Our Car in that list.',
       'Studio Ultraviolet lets visitors select an Ultraviolet reference view and imagine a setting to create a personalised AI-assisted car postcard, aiming to preserve the car’s geometry/branding. Optional Imagined with [name] credit and a branded print make it a personal souvenir; QR downloads provide an alternative where enabled.',
       'Explore Our Car is an interactive Ultraviolet viewer for inspecting engineering and assemblies without repeatedly handling the physical car. The portfolio describes rotation and exploded views.',
       'Voices of Tomorrow asks for a word about STEM Racing’s future, an imagined future headline or advice for tomorrow’s teams. Approved contributions appear on a shared display; a post-event publication is planned, not already completed.',
       'Voices replaced a quiz because prior technical knowledge, language or visitor role should not determine who can contribute. Open-ended perspectives welcome everyone without right/wrong answers. The aim is a memorable connection and active participation rather than passive portfolio viewing.',
-      'Feedback from six team members, the teacher and two outside users led to clearer steps, fewer controls, obvious selections, progress guidance and optional naming. Moderation/revision and backup event arrangements support appropriate content and visitor continuity. Explain purpose and experience, not internal technical details; invite visitors to try it at the pit.',
+      'The portfolio describes feedback from six team members, the teacher and two outside users. Revisions included clearer steps, fewer controls, obvious selections, progress guidance and optional naming. Moderation/revision and backup event arrangements support appropriate content and visitor continuity. Explain the purpose and visitor experience first; discuss development and safety design when relevant.',
+    ],
+  },
+  {
+    title: "PurpleExperience: participation and design choices",
+    details: [
+      "Mark’s pit-design rationale is that printed panels provide an accessible introduction, while the interactive experiences let guests create, inspect and contribute rather than only receive information. The intended distinction is meaningful participation and a personal connection to the team.",
+      "Studio Ultraviolet began when Mark experimented with rendering the car using Google Gemini image generation out of curiosity and was impressed by the results. This prompted him to explore a visitor-created souvenir for the pit; the experiment does not establish the currently deployed model.",
+      "Guests supply a scene description and may add their name, credited as Imagined with [name]. The rationale is that their creative input and personalised credit can make the postcard feel like their own creation and a more memorable souvenir. This is a design intention, not a measured retention or engagement result.",
+      "Affordability was part of the decision: Mark considered both image-generation and postcard-printing costs viable for the experience. No verified current per-visitor cost or exact image model is supplied here; do not quote the tentative figures from development discussion.",
+      "Explore Our Car brings engineering into the visitor experience: rotation lets visitors inspect the car, and exploded views reveal hidden joints and assemblies without physically handling or risking damage to the assembled car.",
+      "Mark chose to focus effort on participation and personal creativity rather than adding technology simply for spectacle. Do not claim the experience is globally unique or that other teams only offer passive displays; no comparative survey supports those claims.",
+    ],
+  },
+  {
+    title: "PurpleExperience: interface development and safety reasoning",
+    details: [
+      "Early demonstrations to team members and a trusted friend outside the team exposed confusing controls, unclear next steps and excessive interface complexity. Mark consulted Apple’s Human Interface Guidelines and revised the interface.",
+      "Mark then asked friends to try the experience on a tablet, explain confusion as it occurred and compare interface iterations. This was iterative qualitative usability feedback; no controlled study, numerical improvement or statistical significance is documented.",
+      "Eye tracking was considered but not performed because suitable hardware was expensive and difficult to obtain. Do not describe it as a completed experiment.",
+      "The safety design aims to keep public contributions appropriate without requiring a team member to manually approve every input, which could slow the experience. The described approach combines specialist safety classification with contextual model review informed by the STEM Racing pit setting, alongside image-provider safety checks during generation.",
+      "Contextual review was intended to improve suitability decisions and reduce unnecessary rejection. Rejection explanations and opportunities to revise input help visitors continue. Moderation reduces risk but does not guarantee perfect detection or prove a measured reduction in false positives; do not claim current provider identities or exact runtime sequencing from this design account.",
+    ],
+  },
+  {
+    title: "Voices of Tomorrow: inclusion and legacy",
+    details: [
+      "The third experience was originally a STEM Racing/engineering quiz. Mark removed it during development because guests have different engineering and enterprise specialisms, knowledge levels and languages. A fixed quiz could bore some guests, discourage others, and require substantial question localisation.",
+      "Voices of Tomorrow replaces scoring with open-ended contributions: a word about the future of STEM Racing, an imagined future headline or advice for future teams. Contributions are checked for suitability, not ranked for technical correctness; no right answer is required.",
+      "The intended role of Team Arion is to provide a stage for visitors’ perspectives. Approved contributions appearing on a shared display make those visitors part of the exhibition; this describes the intended experience, not a guarantee that a display is currently online.",
+      "Mark describes World Finals 2026 as the team’s first and last World Finals. The team had to learn much from scratch with limited prior school experience, so collecting perspectives and advice is intended to help future teams as well as current visitors.",
+      "A public post-event collection of suitable approved contributions is planned to reach people who did not attend World Finals. Do not describe it as published, promise publication of every submission, or invent its format, release date or URL.",
     ],
   },
   {
     title: 'Sustainability',
     details: [
       'Team Arion considers environmental, social and economic sustainability together: digital validation before manufacture, material/equipment reuse, consolidated or lower-impact shipping where feasible, inclusive STEM education and diversified funding.',
-      'The World Finals pit portfolio reports approximately 60% reused/recycled material by mass and about HK$6,700 in avoided purchases. Examples include regional/recycled aluminium framing, a repurposed 32-inch screen, reused Fun-Tech-Lab Windsible and existing server hardware; reversible joints and replaceable panels support later reuse.',
+      'For its documented pit configuration, the World Finals portfolio reports approximately 60% reused/recycled material by mass and about HK$6,700 in avoided purchases, citing regional/recycled aluminium framing, a repurposed 32-inch screen, reused Fun-Tech-Lab Windsible and existing server hardware. These are portfolio-reported figures, not a fresh audit of the installed pit. The final display arrangement remains unconfirmed in this knowledge; do not guarantee that the cited screen was installed or apply the figures to a changed configuration. Reversible joints and replaceable panels support later reuse.',
       'Training 5–10 junior members and a carbon-tracking dashboard are portfolio goals, not verified completed outcomes. Do not claim zero waste or that every material/shipment is sustainable.',
     ],
   },
@@ -358,7 +401,7 @@ export const teamKnowledge: KnowledgeSection[] = [
   {
     title: 'World Finals pit display',
     details: [
-      'The modular, portable pit balances visitor flow, transport, setup and reuse. Printed panels introduce the team, Ultraviolet in the mini wind tunnel provides a centrepiece, touch terminals spread interaction and a separate collection area handles postcards. The later design uses the event-provided table to reduce framing, weight and assembly complexity.',
+      'The documented modular, portable pit balances visitor flow, transport, setup and reuse. Printed panels introduce the team and its sustainability/social impact, while a central car render connects to engineering exploration. The design also includes Ultraviolet in a mini wind tunnel, touch terminals and postcard collection. These describe the design, not verified live installation or availability. The later design uses the event-provided table to reduce framing, weight and assembly complexity.',
       'Ask Arion is reached by QR on visitors’ own devices so longer conversations do not occupy shared terminals. PurpleExperience makes the pit participatory while reducing reliance on large, transport-heavy one-off decorations.',
     ],
   },
@@ -385,6 +428,10 @@ export const assistantRules = [
   'You may use lightweight markdown for readability: **bold**, *italic*, short headings with ##, bullet points, and separator lines --- when genuinely helpful.',
   'Use emphasis sparingly and bold only the most important phrases, not entire paragraphs.',
   'Use only the supplied knowledge. Do not invent facts.',
+  "You may use we and our for Team Arion’s documented work while remaining clearly Ask Arion, the AI assistant. Do not claim personal experiences, human membership or authorship.",
+  "Distinguish design intentions, qualitative feedback, measured outcomes and planned activity. Do not invent an intentional engineering or branding rationale for an imperfection.",
+  "This is curated knowledge, not a live view of the pit. Do not invent installation status, queue times, printer availability, staff presence or final equipment choices; direct live operational questions to a team member.",
+  "Generated Studio Ultraviolet postcards are creative interpretations, not engineering drawings, guaranteed geometrically exact renders or evidence of tested car modifications.",
   'When responding in Chinese, do not translate brand or programme names such as Team Arion and STEM Racing.',
   'Keep genuinely private communications, credentials and internal-only details confidential. PurpleExperience’s supplied public descriptions are authorised and may be explained.',
   'Do not provide the full list of original Team Arion members. If asked, say the original team membership was different and only confirm that Mark Yu and Nithit Chanpongsang were from the original team.',
